@@ -408,8 +408,13 @@ export default function AdminPage() {
                     <div className="flex items-start justify-between mb-1">
                       <h3 className="font-bold text-gray-900">{property.title || 'Sin título'}</h3>
                       {property.referenceCode && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono">
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono" title="Ficha">
                           {property.referenceCode}
+                        </span>
+                      )}
+                      {property.airbnbId && (
+                        <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono border border-red-100" title="Airbnb ID">
+                          {property.airbnbId}
                         </span>
                       )}
                     </div>
@@ -685,6 +690,46 @@ function PropertyModal({
     active: property.active !== false
   })
   const [amenityInput, setAmenityInput] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState('')
+
+  const handleImport = async () => {
+    if (!form.airbnbUrl) return
+    setImporting(true)
+    setImportError('')
+    try {
+      const res = await fetch('/api/properties/import-airbnb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: form.airbnbUrl.trim() })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setForm({
+          ...form,
+          title: data.title || form.title,
+          description: data.description || form.description,
+          location: data.location || form.location,
+          price: data.price || form.price,
+          guests: data.guests || form.guests,
+          bedrooms: data.bedrooms || form.bedrooms,
+          bathrooms: data.bathrooms || form.bathrooms,
+          amenities: data.amenities && data.amenities.length > 0 ? data.amenities : form.amenities,
+          images: data.images && data.images.length > 0
+            ? (data.images.length >= 3 ? data.images.slice(0, 3) : [...data.images, ...Array(3 - data.images.length).fill('')])
+            : form.images,
+          airbnbUrl: data.airbnbUrl || form.airbnbUrl
+        })
+      } else {
+        const errorData = await res.json()
+        setImportError(errorData.error || 'Error al importar')
+      }
+    } catch (error) {
+      setImportError('Error de conexión')
+    } finally {
+      setImporting(false)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -724,6 +769,66 @@ function PropertyModal({
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Airbnb Info & Import (Moved to Top) */}
+          <div className="p-4 bg-red-50 border border-red-100 rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-700 font-semibold">
+                <ExternalLink className="w-4 h-4" />
+                Vincular con Airbnb
+              </div>
+              {property.id.startsWith('new-') && (
+                <button
+                  type="button"
+                  onClick={handleImport}
+                  disabled={importing || !form.airbnbUrl}
+                  className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shrink-0 shadow-sm"
+                >
+                  {importing ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Precargar datos
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="admin-label">URL de Airbnb</label>
+                <input
+                  type="url"
+                  value={form.airbnbUrl}
+                  onChange={(e) => setForm({ ...form, airbnbUrl: e.target.value })}
+                  className="admin-input border-red-100 focus:ring-red-500"
+                  placeholder="https://www.airbnb.com/rooms/..."
+                  required
+                />
+              </div>
+              <div>
+                <label className="admin-label">ID de Airbnb</label>
+                <input
+                  type="text"
+                  value={form.airbnbId || ''}
+                  onChange={(e) => setForm({ ...form, airbnbId: e.target.value })}
+                  className="admin-input border-red-100 focus:ring-red-500"
+                  placeholder="Ej: 12345678"
+                />
+              </div>
+            </div>
+
+            {importError && (
+              <p className="text-xs text-red-600 font-medium">{importError}</p>
+            )}
+
+            {property.id.startsWith('new-') && !importError && !importing && (
+              <p className="text-xs text-red-500/70">
+                Pega la URL de Airbnb y haz clic en <strong>Precargar datos</strong> para autocompletar la ficha técnica.
+              </p>
+            )}
+          </div>
           {/* Active Toggle */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
@@ -887,37 +992,6 @@ function PropertyModal({
             </div>
           </div>
 
-          {/* Airbnb Info */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="admin-label flex items-center gap-2">
-                <ExternalLink className="w-4 h-4" />
-                URL de Airbnb
-              </label>
-              <input
-                type="url"
-                value={form.airbnbUrl}
-                onChange={(e) => setForm({ ...form, airbnbUrl: e.target.value })}
-                className="admin-input"
-                placeholder="https://www.airbnb.com/rooms/..."
-                required
-              />
-            </div>
-            <div>
-              <label className="admin-label flex items-center gap-2">
-                <Hash className="w-4 h-4" />
-                ID de Airbnb
-              </label>
-              <input
-                type="text"
-                value={form.airbnbId || ''}
-                onChange={(e) => setForm({ ...form, airbnbId: e.target.value })}
-                className="admin-input"
-                placeholder="Ej: 12345678"
-              />
-              <p className="text-xs text-gray-500 mt-1">ID numérico específico de Airbnb</p>
-            </div>
-          </div>
 
           {/* Amenities */}
           <div>
