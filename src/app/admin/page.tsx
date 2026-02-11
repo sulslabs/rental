@@ -32,6 +32,7 @@ import {
   saveProperty as persistProperty,
   deleteProperty as removeProperty,
   logout as dataLogout,
+  importAirbnb,
   User
 } from '@/lib/data'
 import { useAuth } from '@/contexts/AuthContext'
@@ -655,13 +656,9 @@ function PropertyModal({
     setImporting(true)
     setImportError('')
     try {
-      const res = await fetch('/api/properties/import-airbnb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: form.airbnbUrl.trim() })
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const data = await importAirbnb(form.airbnbUrl.trim())
+
+      if (data) {
         setForm({
           ...form,
           title: data.title || form.title,
@@ -678,8 +675,7 @@ function PropertyModal({
           airbnbUrl: data.airbnbUrl || form.airbnbUrl
         })
       } else {
-        const errorData = await res.json()
-        setImportError(errorData.error || 'Error al importar')
+        setImportError('Failed to import. Check the URL and try again.')
       }
     } catch (error) {
       setImportError('Error de conexión')
