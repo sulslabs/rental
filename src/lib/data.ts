@@ -2,17 +2,35 @@ import type { Property, SiteSettings } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rond-point-rentals-ai-kx5aus62lq-uc.a.run.app'
 
+// Token management
+const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('auth_token')
+  }
+  return null
+}
+
 // Helper to fetch from API
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
     const url = `${API_URL}${endpoint.startsWith('/') ? endpoint : `/api/${endpoint}`}`
+    const token = getAuthToken()
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(url, {
       ...options,
       cache: 'no-store',
       headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
+        ...headers,
         ...options?.headers,
       },
     })
@@ -20,6 +38,14 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T |
     if (response.ok) {
       return await response.json()
     }
+
+    if (response.status === 401 && typeof window !== 'undefined') {
+      // Handle expired token
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+      window.location.href = '/admin/login'
+    }
+
     console.error(`API error on ${endpoint}:`, response.status, response.statusText)
   } catch (error) {
     console.error(`Fetch error on ${endpoint}:`, error)
@@ -103,6 +129,16 @@ export async function updateProperty(id: string, updates: Partial<Property>): Pr
   return null
 }
 
+export async function saveProperty(property: Partial<Property> & { title: string }): Promise<Property | null> {
+  const isNew = !property.id || property.id.startsWith('new-')
+  if (isNew) {
+    const { id, ...data } = property
+    return createProperty(data as Omit<Property, 'id'>)
+  } else {
+    return updateProperty(property.id as string, property)
+  }
+}
+
 // Delete property
 export async function deleteProperty(id: string): Promise<boolean> {
   const response = await apiFetch<{ success: boolean }>(`properties/${id}`, {
@@ -133,4 +169,38 @@ export async function saveProperties(properties: Property[]): Promise<boolean> {
     await updateProperty(property.id, property)
   }
   return true
+}
+// AUTH
+export interface User {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'owner'
+}
+
+export async function login(email: string, password: string): Promise<{ user: User, token: string } | null> {
+  const data = await apiFetch<{ user: User, token: string }>('auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password })
+  })
+
+  if (data?.token) {
+    localStorage.setItem('auth_token', data.token)
+    localStorage.setItem('auth_user', JSON.stringify(data.user))
+    return data
+  }
+
+  return null
+}
+
+export function logout() {
+  localStorage.removeItem('auth_token')
+  localStorage.removeItem('auth_user')
+  window.location.href = '/admin/login'
+}
+
+export function getCurrentUser(): User | null {
+  if (typeof window === 'undefined') return null
+  const user = localStorage.getItem('auth_user')
+  return user ? JSON.parse(user) : null
 }
