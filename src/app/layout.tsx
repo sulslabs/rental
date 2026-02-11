@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://rond-point-rentals.vercel.app'), // Update with your actual domain
+  // ... existing metadata ...
+  metadataBase: new URL('https://rond-point-rentals.vercel.app'),
   title: 'Rond Point Rentals | Alquileres en Punta del Este',
   description: 'Alquileres de temporada en Punta del Este, Uruguay. La Barra, Manantiales, José Ignacio y más. Reservá por WhatsApp o Airbnb.',
   keywords: 'alquiler punta del este, temporada punta del este, la barra alquiler, manantiales rental, jose ignacio, uruguay vacation rental',
@@ -38,7 +40,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

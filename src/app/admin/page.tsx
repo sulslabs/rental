@@ -8,6 +8,8 @@ import {
   Plus,
   Trash2,
   Save,
+  User as UserIcon,
+  MessageSquare,
   LogOut,
   Eye,
   EyeOff,
@@ -20,16 +22,26 @@ import {
   ChevronLeft,
   ToggleLeft,
   ToggleRight,
-  Hash
+  Hash,
 } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
+import {
+  getProperties,
+  getSettings as fetchSettings,
+  saveSettings as updateSettings,
+  saveProperty as persistProperty,
+  deleteProperty as removeProperty,
+  logout as dataLogout,
+  User
+} from '@/lib/data'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 type Tab = 'properties' | 'settings'
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [password, setPassword] = useState('')
-  const [authError, setAuthError] = useState('')
+  const { user, loading: authLoading, logout } = useAuth()
+  const router = useRouter()
 
   const [activeTab, setActiveTab] = useState<Tab>('properties')
   const [properties, setProperties] = useState<Property[]>([])
@@ -42,59 +54,25 @@ export default function AdminPage() {
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
-  // Authentication
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-      })
-      if (res.ok) {
-        setIsAuthenticated(true)
-        setAuthError('')
-        // Set cookie with 7 day expiry
-        const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString()
-        document.cookie = `admin_auth=true; expires=${expires}; path=/`
-      } else {
-        setAuthError('Contraseña incorrecta')
-      }
-    } catch {
-      setAuthError('Error de conexión')
-    }
-  }
-
-  const handleLogout = () => {
-    setIsAuthenticated(false)
-    // Delete cookie by setting expired date
-    document.cookie = 'admin_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/'
-  }
-
-  // Check session on mount (use cookies for good persistence)
+  // Protect route
   useEffect(() => {
-    // Check cookie for auth
-    const cookies = document.cookie.split(';')
-    const authCookie = cookies.find(c => c.trim().startsWith('admin_auth='))
-    if (authCookie && authCookie.split('=')[1] === 'true') {
-      setIsAuthenticated(true)
+    if (!authLoading && !user) {
+      router.push('/admin/login')
     }
-  }, [])
+  }, [user, authLoading, router])
 
   // Fetch data
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!user) return
 
     const fetchData = async () => {
       try {
-        // Add cache-busting timestamp to prevent stale data
-        const timestamp = Date.now()
-        const [propsRes, settingsRes] = await Promise.all([
-          fetch(`/api/properties?t=${timestamp}`, { cache: 'no-store' }),
-          fetch(`/api/settings?t=${timestamp}`, { cache: 'no-store' })
+        const [props, siteSettings] = await Promise.all([
+          getProperties(),
+          fetchSettings()
         ])
-        setProperties(await propsRes.json())
-        setSettings(await settingsRes.json())
+        setProperties(props)
+        setSettings(siteSettings)
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -102,7 +80,7 @@ export default function AdminPage() {
       }
     }
     fetchData()
-  }, [isAuthenticated])
+  }, [user])
 
   // Show message
   const showMessage = (type: 'success' | 'error', text: string) => {
@@ -115,12 +93,8 @@ export default function AdminPage() {
     if (!settings) return
     setSaving(true)
     try {
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
-      })
-      if (res.ok) {
+      const success = await updateSettings(settings)
+      if (success) {
         showMessage('success', 'Configuración guardada')
       } else {
         showMessage('error', 'Error al guardar')
@@ -137,19 +111,21 @@ export default function AdminPage() {
     setSaving(true)
     try {
       const isNew = property.id.startsWith('new-')
-      const url = isNew ? '/api/properties' : `/api/properties/${property.id}`
-      const method = isNew ? 'POST' : 'PUT'
 
-      const body = isNew ? { ...property, id: undefined } : property
+      // Ensure propertyId property is handled correctly by lib/data functions
+      // persistProperty (saveProperty in lib/data) handles POST/PUT based on existence of id
+      // Wait, let's check lib/data.ts. It has createProperty and updateProperty.
+      // I aliased saveProperty as persistProperty
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
+      let savedProperty;
+      if (isNew) {
+        const { id, ...newPropData } = property
+        savedProperty = await persistProperty(newPropData)
+      } else {
+        savedProperty = await persistProperty(property)
+      }
 
-      if (res.ok) {
-        const savedProperty = await res.json()
+      if (savedProperty) {
         if (isNew) {
           setProperties([...properties, savedProperty])
         } else {
@@ -173,8 +149,8 @@ export default function AdminPage() {
     if (!confirm('¿Estás seguro de eliminar esta propiedad?')) return
 
     try {
-      const res = await fetch(`/api/properties/${id}`, { method: 'DELETE' })
-      if (res.ok) {
+      const success = await removeProperty(id)
+      if (success) {
         setProperties(properties.filter(p => p.id !== id))
         showMessage('success', 'Propiedad eliminada')
       } else {
@@ -216,46 +192,11 @@ export default function AdminPage() {
     bathrooms: 1
   })
 
-  // Login screen
-  if (!isAuthenticated) {
+  // Redirecting...
+  if (authLoading || (!user && typeof window !== 'undefined')) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-primary-500 rounded-xl flex items-center justify-center">
-              <Home className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
-              <p className="text-sm text-gray-500">Rond Point Rentals</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="admin-label">Contraseña</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="admin-input"
-                placeholder="Ingresa tu contraseña"
-                autoFocus
-              />
-            </div>
-
-            {authError && (
-              <p className="text-red-500 text-sm">{authError}</p>
-            )}
-
-            <button
-              type="submit"
-              className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-            >
-              Ingresar
-            </button>
-          </form>
-        </div>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
@@ -274,41 +215,53 @@ export default function AdminPage() {
       <aside className={`${sidebarOpen ? 'w-64' : 'w-0 md:w-20'} bg-gray-900 text-white flex-shrink-0 transition-all duration-300 overflow-hidden`}>
         <div className="p-4 h-full flex flex-col">
           <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
+              <Home className="w-5 h-5" />
+            </div>
             {sidebarOpen && (
-              <>
-                <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
-                  <Home className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold">Admin</h2>
-                  <p className="text-xs text-gray-400">Rond Point Rentals</p>
-                </div>
-              </>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-bold truncate">{user?.name}</h2>
+                <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+              </div>
             )}
           </div>
 
           <nav className="space-y-2 flex-1">
             <button
-              onClick={() => setActiveTab('properties')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'properties'
-                ? 'bg-primary-500 text-white'
-                : 'text-gray-300 hover:bg-gray-800'
-                }`}
+              onClick={() => router.push('/admin')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'properties' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
             >
               <Image className="w-5 h-5" />
               {sidebarOpen && <span>Propiedades</span>}
             </button>
 
             <button
-              onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings'
-                ? 'bg-primary-500 text-white'
-                : 'text-gray-300 hover:bg-gray-800'
-                }`}
+              onClick={() => router.push('/admin/conversations')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
             >
-              <Settings className="w-5 h-5" />
-              {sidebarOpen && <span>Configuración</span>}
+              <MessageSquare className="w-5 h-5" />
+              {sidebarOpen && <span>Mensajes</span>}
             </button>
+
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => router.push('/admin/users')}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+              >
+                <UserIcon className="w-5 h-5" />
+                {sidebarOpen && <span>Usuarios</span>}
+              </button>
+            )}
+
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
+              >
+                <Settings className="w-5 h-5" />
+                {sidebarOpen && <span>Configuración</span>}
+              </button>
+            )}
           </nav>
 
           <div className="space-y-2">
@@ -321,7 +274,7 @@ export default function AdminPage() {
               {sidebarOpen && <span>Ver Sitio</span>}
             </a>
             <button
-              onClick={handleLogout}
+              onClick={logout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-colors"
             >
               <LogOut className="w-5 h-5" />
@@ -362,12 +315,14 @@ export default function AdminPage() {
         </header>
 
         {/* Toast Message */}
-        {message.text && (
-          <div className={`fixed top-20 right-6 z-50 px-6 py-3 rounded-lg shadow-lg ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            } text-white font-medium animate-fade-in`}>
-            {message.text}
-          </div>
-        )}
+        {
+          message.text && (
+            <div className={`fixed top-20 right-6 z-50 px-6 py-3 rounded-lg shadow-lg ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+              } text-white font-medium animate-fade-in`}>
+              {message.text}
+            </div>
+          )
+        }
 
         <div className="p-6">
           {/* Properties Tab */}
@@ -655,21 +610,23 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      </main>
+      </main >
 
       {/* Property Edit Modal */}
-      {showPropertyModal && editingProperty && (
-        <PropertyModal
-          property={editingProperty}
-          onSave={saveProperty}
-          onClose={() => {
-            setShowPropertyModal(false)
-            setEditingProperty(null)
-          }}
-          saving={saving}
-        />
-      )}
-    </div>
+      {
+        showPropertyModal && editingProperty && (
+          <PropertyModal
+            property={editingProperty}
+            onSave={saveProperty}
+            onClose={() => {
+              setShowPropertyModal(false)
+              setEditingProperty(null)
+            }}
+            saving={saving}
+          />
+        )
+      }
+    </div >
   )
 }
 
