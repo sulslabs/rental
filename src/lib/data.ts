@@ -185,7 +185,9 @@ export interface User {
   id: string
   name: string
   email: string
+  phone?: string
   role: 'admin' | 'owner'
+  active?: boolean
 }
 
 export async function login(email: string, password: string): Promise<{ user: User, token: string } | null> {
@@ -234,4 +236,22 @@ export async function updateUserStatus(userId: string, active: boolean): Promise
     body: JSON.stringify({ active })
   })
   return !!data?.success
+}
+
+export async function updateMe(userData: Partial<User>): Promise<boolean> {
+  const data = await apiFetch<{ success: boolean }>('users/me', {
+    method: 'PUT',
+    body: JSON.stringify(userData)
+  })
+
+  if (data?.success) {
+    // Update local storage user data
+    const current = getCurrentUser()
+    if (current) {
+      const updated = { ...current, ...userData }
+      localStorage.setItem('auth_user', JSON.stringify(updated))
+    }
+    return true
+  }
+  return false
 }

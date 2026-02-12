@@ -23,6 +23,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Hash,
+  UserCircle,
 } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
 import {
@@ -33,13 +34,14 @@ import {
   deleteProperty as removeProperty,
   logout as dataLogout,
   importAirbnb,
-  User
+  User,
+  updateMe
 } from '@/lib/data'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
-type Tab = 'properties' | 'settings'
+type Tab = 'properties' | 'settings' | 'profile'
 
 export default function AdminPage() {
   return (
@@ -67,6 +69,17 @@ function AdminContent() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [profileData, setProfileData] = useState<Partial<User>>({
+    name: '',
+    email: '',
+    phone: ''
+  })
+  const [passwords, setPasswords] = useState({
+    old: '',
+    new: '',
+    confirm: ''
+  })
+  const [showPass, setShowPass] = useState(false)
   const searchParams = useSearchParams()
 
   // Handle tab from query param
@@ -105,6 +118,17 @@ function AdminContent() {
       }
     }
     fetchData()
+  }, [user])
+
+  // Sync profile data when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      })
+    }
   }, [user])
 
   // Show message
@@ -198,6 +222,37 @@ function AdminContent() {
     await saveProperty(updated)
   }
 
+  // Save profile
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+
+    if (passwords.new && passwords.new !== passwords.confirm) {
+      showMessage('error', 'Las nuevas contraseñas no coinciden')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const success = await updateMe({
+        ...profileData,
+        oldPassword: passwords.old,
+        newPassword: passwords.new
+      } as any)
+
+      if (success) {
+        showMessage('success', 'Datos actualizados correctamente')
+        setPasswords({ old: '', new: '', confirm: '' })
+      } else {
+        showMessage('error', 'Error al actualizar datos')
+      }
+    } catch (err: any) {
+      showMessage('error', err.message || 'Error de conexión')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // New property
   const newProperty = (): Property => ({
     id: `new-${Date.now()}`,
@@ -279,12 +334,22 @@ function AdminContent() {
             )}
 
             <button
-              onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
+              onClick={() => setActiveTab('profile')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
             >
-              <Settings className="w-5 h-5" />
-              {sidebarOpen && <span>Configuración</span>}
+              <UserCircle className="w-5 h-5" />
+              {sidebarOpen && <span>Datos personales</span>}
             </button>
+
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
+              >
+                <Settings className="w-5 h-5" />
+                {sidebarOpen && <span>Configuración</span>}
+              </button>
+            )}
           </nav>
 
           <div className="space-y-2">
@@ -319,7 +384,8 @@ function AdminContent() {
               {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <h1 className="text-xl font-bold text-gray-900">
-              {activeTab === 'properties' ? 'Gestionar Propiedades' : 'Configuración del Sitio'}
+              {activeTab === 'properties' ? 'Gestionar Propiedades' :
+                activeTab === 'settings' ? 'Configuración del Sitio' : 'Mis Datos Personales'}
             </h1>
           </div>
 
@@ -345,6 +411,104 @@ function AdminContent() {
         ) : null}
 
         <div className="p-6">
+          {/* Profile Tab */}
+          {activeTab === 'profile' && (
+            <div className="max-w-2xl">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div>
+                    <label className="admin-label">Nombre Completo</label>
+                    <input
+                      type="text"
+                      className="admin-input"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="admin-label">Email</label>
+                    <input
+                      type="email"
+                      className="admin-input"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="admin-label">Teléfono</label>
+                    <input
+                      type="tel"
+                      className="admin-input"
+                      placeholder="Ej: +54 9 11 1234-5678"
+                      value={profileData.phone}
+                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="pt-6 border-t mt-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      Cambiar Contraseña
+                      <span className="text-xs font-normal text-gray-400 font-normal ml-2">(opcional)</span>
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="admin-label">Contraseña Actual</label>
+                        <input
+                          type={showPass ? "text" : "password"}
+                          className="admin-input"
+                          value={passwords.old}
+                          onChange={(e) => setPasswords({ ...passwords, old: e.target.value })}
+                          placeholder="Requerido solo si vas a cambiarla"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="admin-label">Nueva Contraseña</label>
+                          <input
+                            type={showPass ? "text" : "password"}
+                            className="admin-input"
+                            value={passwords.new}
+                            onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="admin-label">Confirmar Contraseña</label>
+                          <input
+                            type={showPass ? "text" : "password"}
+                            className="admin-input"
+                            value={passwords.confirm}
+                            onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPass(!showPass)}
+                        className="text-xs text-primary-500 hover:text-primary-600 font-medium"
+                      >
+                        {showPass ? 'Ocultar contraseñas' : 'Mostrar contraseñas'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 text-xs text-gray-400 italic">
+                    Nota: El rol `{user?.role}` no puede ser modificado por el usuario.
+                  </div>
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg transition-colors font-medium disabled:bg-primary-300"
+                    >
+                      {saving ? 'Guardando...' : 'Guardar Cambios'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* Properties Tab */}
           {activeTab === 'properties' && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
