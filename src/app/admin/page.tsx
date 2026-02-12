@@ -864,7 +864,7 @@ function PropertyModal({
           rating: data.rating || form.rating,
           amenities: data.amenities && data.amenities.length > 0 ? data.amenities : form.amenities,
           images: data.images && data.images.length > 0
-            ? (data.images.length >= 3 ? data.images.slice(0, 3) : [...data.images, ...Array(3 - data.images.length).fill('')])
+            ? data.images.slice(0, 15)
             : form.images,
           airbnbUrl: data.airbnbUrl || form.airbnbUrl
         })
@@ -908,6 +908,22 @@ function PropertyModal({
     const newImages = [...form.images]
     newImages[index] = url
     setForm({ ...form, images: newImages })
+  }
+
+  const addImage = () => {
+    if (form.images.length >= 15) return
+    setForm({ ...form, images: [...form.images, ''] })
+  }
+
+  const removeImage = (index: number) => {
+    if (form.images.length <= 1) {
+      // Don't remove the last one, just clear it
+      const newImages = [...form.images]
+      newImages[0] = ''
+      setForm({ ...form, images: newImages })
+      return
+    }
+    setForm({ ...form, images: form.images.filter((_, i) => i !== index) })
   }
 
   return (
@@ -1140,29 +1156,52 @@ function PropertyModal({
 
           {/* Images */}
           <div>
-            <label className="admin-label">Imágenes (URLs)</label>
-            <p className="text-sm text-gray-500 mb-3">
-              Pega URLs de imágenes. La primera será la principal.
+            <div className="flex items-center justify-between mb-3">
+              <label className="admin-label !mb-0">Imágenes (URLs)</label>
+              <button
+                type="button"
+                onClick={addImage}
+                disabled={form.images.length >= 15}
+                className="text-xs font-bold text-primary-500 hover:text-primary-600 flex items-center gap-1 disabled:text-gray-400"
+              >
+                <Plus className="w-3 h-3" /> Añadir Foto ({form.images.length}/15)
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Pega URLs de imágenes. La primera será la principal. Máximo 15.
             </p>
             <div className="space-y-3">
-              {[0, 1, 2].map((index) => (
-                <div key={index} className="flex gap-3 items-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                    {form.images[index] ? (
-                      <img src={form.images[index]} alt="" className="w-full h-full object-cover" />
+              {form.images.map((imgUrl, index) => (
+                <div key={index} className="flex gap-3 items-center group">
+                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                    {imgUrl ? (
+                      <img src={imgUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Image className="w-6 h-6 text-gray-300" />
                       </div>
                     )}
                   </div>
-                  <input
-                    type="url"
-                    value={form.images[index] || ''}
-                    onChange={(e) => updateImage(index, e.target.value)}
-                    className="admin-input flex-1"
-                    placeholder={`URL de imagen ${index + 1}${index === 0 ? ' (principal)' : ''}`}
-                  />
+                  <div className="flex-1 relative">
+                    <input
+                      type="url"
+                      value={imgUrl}
+                      onChange={(e) => updateImage(index, e.target.value)}
+                      className="admin-input !py-2"
+                      placeholder={`URL de imagen ${index + 1}${index === 0 ? ' (principal)' : ''}`}
+                    />
+                    {index === 0 && (
+                      <span className="absolute -top-2 left-3 bg-primary-500 text-[10px] text-white px-1.5 rounded-sm font-bold uppercase tracking-wider">Portada</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Eliminar imagen"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
