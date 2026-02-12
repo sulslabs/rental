@@ -15,6 +15,7 @@ export interface Property {
   guests: number;
   bedrooms: number;
   bathrooms: number;
+  rating?: string;
 }
 
 export interface SiteSettings {
