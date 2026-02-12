@@ -14,7 +14,8 @@ import {
     Settings,
     Clock,
     ExternalLink,
-    MessageCircle
+    MessageCircle,
+    UserCircle
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -112,6 +113,14 @@ export default function ConversationsPage() {
                         >
                             <MessageSquare className="w-5 h-5" />
                             {sidebarOpen && <span>Mensajes</span>}
+                        </button>
+
+                        <button
+                            onClick={() => router.push('/admin?tab=profile')}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+                        >
+                            <UserCircle className="w-5 h-5" />
+                            {sidebarOpen && <span>Datos personales</span>}
                         </button>
 
                         {user.role === 'admin' && (

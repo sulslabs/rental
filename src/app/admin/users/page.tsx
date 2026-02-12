@@ -16,7 +16,9 @@ import {
     Menu,
     LogOut,
     Image,
-    Settings
+    Settings,
+    UserCircle,
+    MessageSquare
 } from 'lucide-react'
 import {
     getUsers,
@@ -138,12 +140,30 @@ export default function UsersPage() {
                         </button>
 
                         <button
-                            onClick={() => router.push('/admin/users')}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-500 text-white transition-colors"
+                            onClick={() => router.push('/admin/conversations')}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
                         >
-                            <UserIcon className="w-5 h-5" />
-                            {sidebarOpen && <span>Usuarios</span>}
+                            <MessageSquare className="w-5 h-5" />
+                            {sidebarOpen && <span>Mensajes</span>}
                         </button>
+
+                        <button
+                            onClick={() => router.push('/admin?tab=profile')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors`}
+                        >
+                            <UserCircle className="w-5 h-5" />
+                            {sidebarOpen && <span>Datos personales</span>}
+                        </button>
+
+                        {user.role === 'admin' && (
+                            <button
+                                onClick={() => router.push('/admin/users')}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-500 text-white transition-colors"
+                            >
+                                <UserIcon className="w-5 h-5" />
+                                {sidebarOpen && <span>Usuarios</span>}
+                            </button>
+                        )}
 
                         {user.role === 'admin' && (
                             <button

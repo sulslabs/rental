@@ -23,6 +23,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Hash,
+  UserCircle,
 } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
 import {
@@ -33,13 +34,14 @@ import {
   deleteProperty as removeProperty,
   logout as dataLogout,
   importAirbnb,
-  User
+  User,
+  updateMe
 } from '@/lib/data'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
-type Tab = 'properties' | 'settings'
+type Tab = 'properties' | 'settings' | 'profile'
 
 export default function AdminPage() {
   return (
@@ -67,6 +69,11 @@ function AdminContent() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [profileData, setProfileData] = useState<Partial<User>>({
+    name: '',
+    email: '',
+    phone: ''
+  })
   const searchParams = useSearchParams()
 
   // Handle tab from query param
@@ -105,6 +112,17 @@ function AdminContent() {
       }
     }
     fetchData()
+  }, [user])
+
+  // Sync profile data when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      })
+    }
   }, [user])
 
   // Show message
@@ -198,6 +216,25 @@ function AdminContent() {
     await saveProperty(updated)
   }
 
+  // Save profile
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+    setSaving(true)
+    try {
+      const success = await updateMe(profileData)
+      if (success) {
+        showMessage('success', 'Datos actualizados correctamente')
+      } else {
+        showMessage('error', 'Error al actualizar datos')
+      }
+    } catch {
+      showMessage('error', 'Error de conexión')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // New property
   const newProperty = (): Property => ({
     id: `new-${Date.now()}`,
@@ -278,6 +315,14 @@ function AdminContent() {
               </button>
             )}
 
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
+            >
+              <UserCircle className="w-5 h-5" />
+              {sidebarOpen && <span>Datos personales</span>}
+            </button>
+
             {user?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('settings')}
@@ -321,7 +366,8 @@ function AdminContent() {
               {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <h1 className="text-xl font-bold text-gray-900">
-              {activeTab === 'properties' ? 'Gestionar Propiedades' : 'Configuración del Sitio'}
+              {activeTab === 'properties' ? 'Gestionar Propiedades' :
+                activeTab === 'settings' ? 'Configuración del Sitio' : 'Mis Datos Personales'}
             </h1>
           </div>
 
@@ -347,6 +393,58 @@ function AdminContent() {
         ) : null}
 
         <div className="p-6">
+          {/* Profile Tab */}
+          {activeTab === 'profile' && (
+            <div className="max-w-2xl">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div>
+                    <label className="admin-label">Nombre Completo</label>
+                    <input
+                      type="text"
+                      className="admin-input"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="admin-label">Email</label>
+                    <input
+                      type="email"
+                      className="admin-input"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="admin-label">Teléfono</label>
+                    <input
+                      type="tel"
+                      className="admin-input"
+                      placeholder="Ej: +54 9 11 1234-5678"
+                      value={profileData.phone}
+                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="pt-4 text-xs text-gray-400 italic">
+                    Nota: El rol `{user?.role}` no puede ser modificado por el usuario.
+                  </div>
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg transition-colors font-medium disabled:bg-primary-300"
+                    >
+                      {saving ? 'Guardando...' : 'Guardar Cambios'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* Properties Tab */}
           {activeTab === 'properties' && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
