@@ -194,8 +194,8 @@ export default function HomePage() {
                         key={idx}
                         onClick={() => setActiveImage(idx)}
                         className={`relative aspect-[4/3] rounded-lg overflow-hidden transition-all ${activeImage === idx
-                            ? 'ring-2 ring-primary-500 ring-offset-2'
-                            : 'opacity-70 hover:opacity-100'
+                          ? 'ring-2 ring-primary-500 ring-offset-2'
+                          : 'opacity-70 hover:opacity-100'
                           }`}
                       >
                         <img
@@ -225,6 +225,10 @@ export default function HomePage() {
 
                   {/* Property Stats */}
                   <div className="flex flex-wrap gap-4 py-4 border-y border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                      <span className="text-gray-700 font-bold">{selectedProperty.rating || 'N/A'}</span>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-primary-500" />
                       <span className="text-gray-700">{selectedProperty.guests} huéspedes</span>
@@ -339,6 +343,13 @@ export default function HomePage() {
                     <p className="text-gray-500 flex items-center gap-1 mb-4">
                       <MapPin className="w-4 h-4" />
                       {property.location}
+                      {property.rating && property.rating !== 'N/A' && (
+                        <>
+                          <span className="mx-2 text-gray-300">•</span>
+                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                          <span className="text-sm font-bold text-gray-700">{property.rating}</span>
+                        </>
+                      )}
                     </p>
 
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
