@@ -39,6 +39,7 @@ export default function UsersPage() {
     const [newUser, setNewUser] = useState({
         name: '',
         email: '',
+        phone: '',
         password: '',
         role: 'owner' as 'admin' | 'owner'
     })
@@ -81,7 +82,7 @@ export default function UsersPage() {
             const user = await adminCreateUser(newUser)
             if (user) {
                 setShowModal(false)
-                setNewUser({ name: '', email: '', password: '', role: 'owner' })
+                setNewUser({ name: '', email: '', phone: '', password: '', role: 'owner' })
                 fetchUsers()
             } else {
                 setError('Error al crear usuario. Verifica los datos.')
@@ -275,7 +276,7 @@ export default function UsersPage() {
                                     value={newUser.name}
                                     onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                                     className="admin-input"
-                                    placeholder="Ej: Paula Garcia"
+                                    placeholder="Ej: Juan Perez"
                                 />
                             </div>
                             <div>
@@ -286,7 +287,17 @@ export default function UsersPage() {
                                     value={newUser.email}
                                     onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                                     className="admin-input"
-                                    placeholder="paula@ejemplo.com"
+                                    placeholder="usuario@mail.com"
+                                />
+                            </div>
+                            <div>
+                                <label className="admin-label">Teléfono</label>
+                                <input
+                                    type="tel"
+                                    value={newUser.phone}
+                                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                                    className="admin-input"
+                                    placeholder="Ej: +54 9 11 1234-5678"
                                 />
                             </div>
                             <div>
