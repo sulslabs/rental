@@ -124,15 +124,13 @@ export default function ConversationsPage() {
                             </button>
                         )}
 
-                        {user.role === 'admin' && (
-                            <button
-                                onClick={() => router.push('/admin/settings')}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
-                            >
-                                <Settings className="w-5 h-5" />
-                                {sidebarOpen && <span>Configuración</span>}
-                            </button>
-                        )}
+                        <button
+                            onClick={() => router.push('/admin?tab=settings')}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+                        >
+                            <Settings className="w-5 h-5" />
+                            {sidebarOpen && <span>Configuración</span>}
+                        </button>
                     </nav>
 
                     <div className="space-y-2">
@@ -221,8 +219,8 @@ export default function ConversationsPage() {
                                     ) : selectedConv.messages?.map((msg: any) => (
                                         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                                             <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${msg.role === 'user'
-                                                    ? 'bg-white text-gray-800'
-                                                    : 'bg-primary-500 text-white'
+                                                ? 'bg-white text-gray-800'
+                                                : 'bg-primary-500 text-white'
                                                 }`}>
                                                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                                                 <p className={`text-[10px] mt-2 ${msg.role === 'user' ? 'text-gray-400' : 'text-primary-100'}`}>

@@ -36,11 +36,24 @@ import {
   User
 } from '@/lib/data'
 import { useAuth } from '@/contexts/AuthContext'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
 type Tab = 'properties' | 'settings'
 
 export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <AdminContent />
+    </Suspense>
+  )
+}
+
+function AdminContent() {
   const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
 
@@ -54,6 +67,17 @@ export default function AdminPage() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const searchParams = useSearchParams()
+
+  // Handle tab from query param
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'settings') {
+      setActiveTab('settings')
+    } else if (tab === 'properties') {
+      setActiveTab('properties')
+    }
+  }, [searchParams])
 
   // Protect route
   useEffect(() => {
@@ -229,7 +253,7 @@ export default function AdminPage() {
 
           <nav className="space-y-2 flex-1">
             <button
-              onClick={() => router.push('/admin')}
+              onClick={() => setActiveTab('properties')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'properties' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
             >
               <Image className="w-5 h-5" />
@@ -254,15 +278,13 @@ export default function AdminPage() {
               </button>
             )}
 
-            {user?.role === 'admin' && (
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
-              >
-                <Settings className="w-5 h-5" />
-                {sidebarOpen && <span>Configuración</span>}
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
+            >
+              <Settings className="w-5 h-5" />
+              {sidebarOpen && <span>Configuración</span>}
+            </button>
           </nav>
 
           <div className="space-y-2">
@@ -316,14 +338,11 @@ export default function AdminPage() {
         </header>
 
         {/* Toast Message */}
-        {
-          message.text && (
-            <div className={`fixed top-20 right-6 z-50 px-6 py-3 rounded-lg shadow-lg ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-              } text-white font-medium animate-fade-in`}>
-              {message.text}
-            </div>
-          )
-        }
+        {message.text ? (
+          <div className={`fixed top-20 right-6 z-50 px-6 py-3 rounded-lg shadow-lg ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white font-medium animate-fade-in`}>
+            {message.text}
+          </div>
+        ) : null}
 
         <div className="p-6">
           {/* Properties Tab */}
@@ -428,6 +447,14 @@ export default function AdminPage() {
             <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
                 <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 font-mono">
+                    Perfil {user?.role === 'admin' ? 'Administrador' : 'Propietario'}
+                  </h3>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 mb-6">
+                    <p className="text-sm text-gray-600"><strong>Nombre:</strong> {user?.name}</p>
+                    <p className="text-sm text-gray-600"><strong>Email:</strong> {user?.email}</p>
+                  </div>
+
                   <h3 className="text-lg font-bold text-gray-900 mb-4">Información General</h3>
                   <div className="space-y-4">
                     <div>
@@ -543,59 +570,63 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Analytics y Tracking</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="admin-label">Google Analytics 4 (ID)</label>
-                      <input
-                        type="text"
-                        value={settings.googleAnalyticsId || ''}
-                        onChange={(e) => setSettings({ ...settings, googleAnalyticsId: e.target.value })}
-                        className="admin-input"
-                        placeholder="G-XXXXXXXXXX"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">ID de medición de GA4 (empieza con G-)</p>
+                {user?.role === 'admin' && (
+                  <>
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4">Analytics y Tracking</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="admin-label">Google Analytics 4 (ID)</label>
+                          <input
+                            type="text"
+                            value={settings.googleAnalyticsId || ''}
+                            onChange={(e) => setSettings({ ...settings, googleAnalyticsId: e.target.value })}
+                            className="admin-input"
+                            placeholder="G-XXXXXXXXXX"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">ID de medición de GA4 (empieza con G-)</p>
+                        </div>
+                        <div>
+                          <label className="admin-label">Meta Pixel (Facebook)</label>
+                          <input
+                            type="text"
+                            value={settings.metaPixelId || ''}
+                            onChange={(e) => setSettings({ ...settings, metaPixelId: e.target.value })}
+                            className="admin-input"
+                            placeholder="123456789012345"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">ID del Pixel de Meta/Facebook (solo números)</p>
+                        </div>
+                        <div>
+                          <label className="admin-label">Google Tag Manager (ID)</label>
+                          <input
+                            type="text"
+                            value={settings.googleTagManagerId || ''}
+                            onChange={(e) => setSettings({ ...settings, googleTagManagerId: e.target.value })}
+                            className="admin-input"
+                            placeholder="GTM-XXXXXXX"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">ID del contenedor GTM (empieza con GTM-)</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="admin-label">Meta Pixel (Facebook)</label>
-                      <input
-                        type="text"
-                        value={settings.metaPixelId || ''}
-                        onChange={(e) => setSettings({ ...settings, metaPixelId: e.target.value })}
-                        className="admin-input"
-                        placeholder="123456789012345"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">ID del Pixel de Meta/Facebook (solo números)</p>
-                    </div>
-                    <div>
-                      <label className="admin-label">Google Tag Manager (ID)</label>
-                      <input
-                        type="text"
-                        value={settings.googleTagManagerId || ''}
-                        onChange={(e) => setSettings({ ...settings, googleTagManagerId: e.target.value })}
-                        className="admin-input"
-                        placeholder="GTM-XXXXXXX"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">ID del contenedor GTM (empieza con GTM-)</p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Código Personalizado</h3>
-                  <div>
-                    <label className="admin-label">Código para {'<head>'}</label>
-                    <textarea
-                      value={settings.customHeadCode || ''}
-                      onChange={(e) => setSettings({ ...settings, customHeadCode: e.target.value })}
-                      className="admin-input font-mono text-sm"
-                      rows={5}
-                      placeholder="<!-- Pega aquí código adicional para el <head> -->"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Scripts, meta tags u otro código HTML para el {'<head>'}</p>
-                  </div>
-                </div>
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4">Código Personalizado</h3>
+                      <div>
+                        <label className="admin-label">Código para {'<head>'}</label>
+                        <textarea
+                          value={settings.customHeadCode || ''}
+                          onChange={(e) => setSettings({ ...settings, customHeadCode: e.target.value })}
+                          className="admin-input font-mono text-sm"
+                          rows={5}
+                          placeholder="<!-- Pega aquí código adicional para el <head> -->"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Scripts, meta tags u otro código HTML para el {'<head>'}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="border-t pt-6">
                   <button
@@ -611,22 +642,20 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      </main >
+      </main>
 
       {/* Property Edit Modal */}
-      {
-        showPropertyModal && editingProperty && (
-          <PropertyModal
-            property={editingProperty}
-            onSave={saveProperty}
-            onClose={() => {
-              setShowPropertyModal(false)
-              setEditingProperty(null)
-            }}
-            saving={saving}
-          />
-        )
-      }
+      {showPropertyModal && editingProperty ? (
+        <PropertyModal
+          property={editingProperty}
+          onSave={saveProperty}
+          onClose={() => {
+            setShowPropertyModal(false)
+            setEditingProperty(null)
+          }}
+          saving={saving}
+        />
+      ) : null}
     </div >
   )
 }
