@@ -124,13 +124,15 @@ export default function ConversationsPage() {
                             </button>
                         )}
 
-                        <button
-                            onClick={() => router.push('/admin?tab=settings')}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
-                        >
-                            <Settings className="w-5 h-5" />
-                            {sidebarOpen && <span>Configuración</span>}
-                        </button>
+                        {user.role === 'admin' && (
+                            <button
+                                onClick={() => router.push('/admin?tab=settings')}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+                            >
+                                <Settings className="w-5 h-5" />
+                                {sidebarOpen && <span>Configuración</span>}
+                            </button>
+                        )}
                     </nav>
 
                     <div className="space-y-2">

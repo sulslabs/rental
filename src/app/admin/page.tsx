@@ -278,13 +278,15 @@ function AdminContent() {
               </button>
             )}
 
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
-            >
-              <Settings className="w-5 h-5" />
-              {sidebarOpen && <span>Configuración</span>}
-            </button>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary-500 text-white' : 'text-gray-300 hover:bg-gray-800'}`}
+              >
+                <Settings className="w-5 h-5" />
+                {sidebarOpen && <span>Configuración</span>}
+              </button>
+            )}
           </nav>
 
           <div className="space-y-2">
