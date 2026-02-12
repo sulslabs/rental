@@ -1080,15 +1080,15 @@ function PropertyModal({
             </div>
             <div>
               <label className="admin-label">Puntuación (Rating)</label>
-              <div className="relative">
+              <div className="relative flex items-center">
+                <Star className="w-4 h-4 text-gray-400 absolute left-4" />
                 <input
                   type="text"
                   value={form.rating || ''}
                   onChange={(e) => setForm({ ...form, rating: e.target.value })}
-                  className="admin-input pl-10"
+                  className="admin-input !pl-11"
                   placeholder="Ej: 4.85"
                 />
-                <Star className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
               <p className="text-xs text-gray-500 mt-1">Se muestra junto al título y ubicación</p>
             </div>
