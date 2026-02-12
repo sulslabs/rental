@@ -46,6 +46,28 @@ export default function HomePage() {
     fetchData()
   }, [])
 
+  // Auto-rotate featured properties
+  useEffect(() => {
+    if (properties.length === 0) return
+
+    const featuredProps = properties.filter(p => p.featured)
+    if (featuredProps.length <= 1) return
+
+    const interval = setInterval(() => {
+      setSelectedProperty(prev => {
+        if (!prev) return featuredProps[0]
+        const currentIndex = featuredProps.findIndex(p => p.id === prev.id)
+        // If the current property is not in featured (manually selected), 
+        // start back from the first featured one
+        const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % featuredProps.length
+        setActiveImage(0)
+        return featuredProps[nextIndex]
+      })
+    }, 10000) // Rotate every 10 seconds
+
+    return () => clearInterval(interval)
+  }, [properties])
+
   const whatsappLink = settings
     ? `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(settings.whatsappMessage)}`
     : '#'
@@ -211,9 +233,11 @@ export default function HomePage() {
                 {/* Property Info */}
                 <div className="lg:sticky lg:top-24 space-y-6">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Bookmark className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                      <span className="text-sm font-medium text-gray-600">Destacado</span>
+                    <div className="mb-4">
+                      <span className="inline-flex items-center gap-1.5 bg-primary-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-md shadow-primary-500/20">
+                        <Bookmark className="w-4 h-4 fill-white" />
+                        Destacado
+                      </span>
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
                       {selectedProperty.title}
