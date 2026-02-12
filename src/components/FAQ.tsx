@@ -70,92 +70,58 @@ const faqCategories = [
 
 export default function FAQ() {
     // Store the ID of the open item as "categoryIndex-itemIndex"
-    const [openItemId, setOpenItemId] = useState<string | null>(null)
+    const [openId, setOpenId] = useState<string | null>(null)
 
-    // Store open categories (default to open to encourage reading)
-    const [openCategories, setOpenCategories] = useState<number[]>([0, 1])
-
-    const toggleItem = (catIndex: number, itemIndex: number) => {
+    const toggle = (catIndex: number, itemIndex: number) => {
         const id = `${catIndex}-${itemIndex}`
-        setOpenItemId(openItemId === id ? null : id)
-    }
-
-    const toggleCategory = (catIndex: number) => {
-        setOpenCategories(prev =>
-            prev.includes(catIndex)
-                ? prev.filter(idx => idx !== catIndex)
-                : [...prev, catIndex]
-        )
+        setOpenId(openId === id ? null : id)
     }
 
     return (
-        <div className="mt-16 w-full max-w-3xl mx-auto">
-            <h3 className="text-3xl font-bold text-gray-900 mb-10 text-center px-4">Preguntas Frecuentes</h3>
+        <div className="w-full max-w-3xl mx-auto">
+            <h3 className="text-3xl font-bold text-gray-900 mb-6 text-center px-4">Preguntas Frecuentes</h3>
 
-            <div className="space-y-6 px-4">
-                {faqCategories.map((category, catIndex) => {
-                    const isCategoryOpen = openCategories.includes(catIndex)
-
-                    return (
-                        <div key={catIndex} className="bg-gray-50/50 rounded-2xl p-2 sm:p-4">
-                            {/* Category Header */}
-                            <button
-                                onClick={() => toggleCategory(catIndex)}
-                                className="w-full flex items-center justify-between p-2 mb-2 group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`h-8 w-1 bg-primary-500 rounded-full transition-all duration-300 ${isCategoryOpen ? 'h-8' : 'h-4'}`}></div>
-                                    <h4 className="text-xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
-                                        {category.title}
-                                    </h4>
-                                </div>
-                                {isCategoryOpen ? (
-                                    <ChevronUp className="w-6 h-6 text-gray-400 group-hover:text-primary-500 transition-colors" />
-                                ) : (
-                                    <ChevronDown className="w-6 h-6 text-gray-400 group-hover:text-primary-500 transition-colors" />
-                                )}
-                            </button>
-
-                            {/* Category Content (Collapsible) */}
-                            <div
-                                className={`overflow-hidden transition-all duration-300 ease-in-out ${isCategoryOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
-                                    }`}
-                            >
-                                <div className="space-y-3 pt-2">
-                                    {category.items.map((item, itemIndex) => {
-                                        const isOpen = openItemId === `${catIndex}-${itemIndex}`
-                                        return (
-                                            <div
-                                                key={itemIndex}
-                                                className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md"
-                                            >
-                                                <button
-                                                    onClick={() => toggleItem(catIndex, itemIndex)}
-                                                    className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
-                                                >
-                                                    <span className="font-semibold text-gray-800 pr-4">{item.question}</span>
-                                                    {isOpen ? (
-                                                        <ChevronUp className="w-5 h-5 text-primary-500 flex-shrink-0" />
-                                                    ) : (
-                                                        <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                                                    )}
-                                                </button>
-                                                <div
-                                                    className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
-                                                        }`}
-                                                >
-                                                    <div className="p-4 pt-0 text-gray-600 border-t border-gray-50 bg-gray-50/30">
-                                                        {item.answer}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
+            <div className="space-y-8 px-4">
+                {faqCategories.map((category, catIndex) => (
+                    <div key={catIndex}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="h-6 w-1 bg-primary-500 rounded-full"></div>
+                            <h4 className="text-lg font-bold text-gray-900">{category.title}</h4>
                         </div>
-                    )
-                })}
+
+                        <div className="space-y-3">
+                            {category.items.map((item, itemIndex) => {
+                                const isOpen = openId === `${catIndex}-${itemIndex}`
+                                return (
+                                    <div
+                                        key={itemIndex}
+                                        className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md"
+                                    >
+                                        <button
+                                            onClick={() => toggle(catIndex, itemIndex)}
+                                            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                                        >
+                                            <span className="font-semibold text-gray-800 pr-4 text-sm md:text-base">{item.question}</span>
+                                            {isOpen ? (
+                                                <ChevronUp className="w-5 h-5 text-primary-500 flex-shrink-0" />
+                                            ) : (
+                                                <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                                            )}
+                                        </button>
+                                        <div
+                                            className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
+                                                }`}
+                                        >
+                                            <div className="p-4 pt-0 text-sm md:text-base text-gray-600 border-t border-gray-50 bg-gray-50/30">
+                                                {item.answer}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     )
