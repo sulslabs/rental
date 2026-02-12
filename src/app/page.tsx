@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Script from 'next/script'
-import { MessageCircle, MapPin, Users, Bed, Bath, Star, Home, Instagram, Facebook, PlusCircle, Bookmark } from 'lucide-react'
+import { MessageCircle, MapPin, Users, Bed, Bath, Star, Home, Instagram, Facebook, PlusCircle, Bookmark, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
 
 // TikTok icon component
@@ -18,6 +18,8 @@ export default function HomePage() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [activeImage, setActiveImage] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [isAutoRotating, setIsAutoRotating] = useState(true)
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,7 +50,7 @@ export default function HomePage() {
 
   // Auto-rotate featured properties
   useEffect(() => {
-    if (properties.length === 0) return
+    if (properties.length === 0 || !isAutoRotating) return
 
     const featuredProps = properties.filter(p => p.featured)
     if (featuredProps.length <= 1) return
@@ -57,16 +59,14 @@ export default function HomePage() {
       setSelectedProperty(prev => {
         if (!prev) return featuredProps[0]
         const currentIndex = featuredProps.findIndex(p => p.id === prev.id)
-        // If the current property is not in featured (manually selected), 
-        // start back from the first featured one
         const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % featuredProps.length
         setActiveImage(0)
         return featuredProps[nextIndex]
       })
-    }, 10000) // Rotate every 10 seconds
+    }, 15000) // Rotate every 15 seconds
 
     return () => clearInterval(interval)
-  }, [properties])
+  }, [properties, isAutoRotating])
 
   const whatsappLink = settings
     ? `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(settings.whatsappMessage)}`
@@ -198,7 +198,11 @@ export default function HomePage() {
                     <img
                       src={selectedProperty.images[activeImage]}
                       alt={selectedProperty.title}
-                      className="w-full h-full object-cover gallery-image"
+                      className="w-full h-full object-cover gallery-image cursor-zoom-in"
+                      onClick={() => {
+                        setIsGalleryOpen(true)
+                        setIsAutoRotating(false)
+                      }}
                     />
                     <div className="absolute inset-0 gradient-overlay opacity-30"></div>
                     <div className="absolute bottom-4 left-4 right-4">
@@ -211,10 +215,17 @@ export default function HomePage() {
 
                   {/* Thumbnail Images */}
                   <div className="grid grid-cols-3 gap-3">
-                    {selectedProperty.images.map((img, idx) => (
+                    {selectedProperty.images.slice(0, 3).map((img, idx) => (
                       <button
                         key={idx}
-                        onClick={() => setActiveImage(idx)}
+                        onClick={() => {
+                          if (idx === 2 && selectedProperty.images.length > 3) {
+                            setIsGalleryOpen(true)
+                          } else {
+                            setActiveImage(idx)
+                          }
+                          setIsAutoRotating(false)
+                        }}
                         className={`relative aspect-[4/3] rounded-lg overflow-hidden transition-all ${activeImage === idx
                           ? 'ring-2 ring-primary-500 ring-offset-2'
                           : 'opacity-70 hover:opacity-100'
@@ -225,6 +236,12 @@ export default function HomePage() {
                           alt={`${selectedProperty.title} - ${idx + 1}`}
                           className="w-full h-full object-cover"
                         />
+                        {idx === 2 && selectedProperty.images.length > 3 && (
+                          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
+                            <span className="text-lg font-bold">+{selectedProperty.images.length - 3}</span>
+                            <span className="text-[10px] uppercase tracking-wider font-medium">Ver más</span>
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -338,6 +355,7 @@ export default function HomePage() {
                   onClick={() => {
                     setSelectedProperty(property)
                     setActiveImage(0)
+                    setIsAutoRotating(false)
                     window.scrollTo({ top: 0, behavior: 'smooth' })
                   }}
                 >
@@ -515,6 +533,68 @@ export default function HomePage() {
         </footer>
 
       </main>
+
+      {/* Gallery Modal */}
+      {isGalleryOpen && selectedProperty && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+          <button
+            onClick={() => setIsGalleryOpen(false)}
+            className="absolute top-6 right-6 text-white/70 hover:text-white p-2 transition-colors"
+          >
+            <X className="w-8 h-8" />
+          </button>
+
+          <div className="w-full max-w-5xl aspect-[16/10] relative flex items-center justify-center">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                const newIdx = (activeImage - 1 + selectedProperty.images.length) % selectedProperty.images.length
+                setActiveImage(newIdx)
+              }}
+              className="absolute left-0 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </button>
+
+            <img
+              src={selectedProperty.images[activeImage]}
+              alt={selectedProperty.title}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            />
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                const newIdx = (activeImage + 1) % selectedProperty.images.length
+                setActiveImage(newIdx)
+              }}
+              className="absolute right-0 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </button>
+
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-4 py-1.5 rounded-full text-white text-sm font-medium">
+              {activeImage + 1} / {selectedProperty.images.length}
+            </div>
+          </div>
+
+          {/* Thumbnail strip */}
+          <div className="w-full max-w-4xl mt-8 flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-4">
+            {selectedProperty.images.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveImage(idx)}
+                className={`relative flex-shrink-0 w-24 aspect-[4/3] rounded-md overflow-hidden transition-all ${activeImage === idx
+                  ? 'ring-2 ring-primary-500 ring-offset-2 opacity-100'
+                  : 'opacity-40 hover:opacity-100'
+                  }`}
+              >
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   )
 }
