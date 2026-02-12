@@ -40,17 +40,27 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T |
     }
 
     if (response.status === 401 && typeof window !== 'undefined') {
-      // Handle expired token
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
       window.location.href = '/admin/login'
+      return null
     }
 
-    console.error(`API error on ${endpoint}:`, response.status, response.statusText)
-  } catch (error) {
+    // Extract error message from body if possible
+    let errorMessage = `API error ${response.status}: ${response.statusText}`
+    try {
+      const errorData = await response.json()
+      if (errorData.error) errorMessage = errorData.error
+    } catch (e) {
+      // Not a JSON error body
+    }
+
+    console.error(`API error on ${endpoint}:`, errorMessage)
+    throw new Error(errorMessage)
+  } catch (error: any) {
     console.error(`Fetch error on ${endpoint}:`, error)
+    throw error // Re-throw so callers identify connection issues vs null data
   }
-  return null
 }
 
 // SETTINGS
@@ -203,4 +213,25 @@ export function getCurrentUser(): User | null {
   if (typeof window === 'undefined') return null
   const user = localStorage.getItem('auth_user')
   return user ? JSON.parse(user) : null
+}
+
+export async function getUsers(): Promise<User[]> {
+  const data = await apiFetch<User[]>('users')
+  return data || []
+}
+
+export async function adminCreateUser(userData: any): Promise<User | null> {
+  console.log('DEBUG: Calling adminCreateUser with userData:', userData)
+  return await apiFetch<User>('users', {
+    method: 'POST',
+    body: JSON.stringify(userData)
+  })
+}
+
+export async function updateUserStatus(userId: string, active: boolean): Promise<boolean> {
+  const data = await apiFetch<{ success: boolean }>(`users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ active })
+  })
+  return !!data?.success
 }

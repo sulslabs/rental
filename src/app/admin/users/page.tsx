@@ -18,7 +18,12 @@ import {
     Image,
     Settings
 } from 'lucide-react'
-import { User } from '@/lib/data'
+import {
+    getUsers,
+    adminCreateUser,
+    updateUserStatus,
+    User
+} from '@/lib/data'
 
 export default function UsersPage() {
     const { user, loading: authLoading, logout } = useAuth()
@@ -51,11 +56,8 @@ export default function UsersPage() {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('/api/users')
-            if (res.ok) {
-                const data = await res.json()
-                setUsers(data)
-            }
+            const data = await getUsers()
+            setUsers(data)
         } catch (err) {
             console.error('Error fetching users:', err)
         } finally {
@@ -74,34 +76,26 @@ export default function UsersPage() {
         setSaving(true)
         setError('')
         try {
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newUser)
-            })
-            if (res.ok) {
+            const user = await adminCreateUser(newUser)
+            if (user) {
                 setShowModal(false)
                 setNewUser({ name: '', email: '', password: '', role: 'owner' })
                 fetchUsers()
             } else {
-                const data = await res.json()
-                setError(data.error || 'Error al crear usuario')
+                setError('Error al crear usuario. Verifica los datos.')
             }
-        } catch (err) {
-            setError('Error de conexión')
+        } catch (err: any) {
+            console.error('Full connection error details:', err)
+            setError(err.message || (err.toString && err.toString()) || 'Error de conexión')
         } finally {
             setSaving(false)
         }
     }
 
-    const toggleUserStatus = async (userId: string, active: boolean) => {
+    const handleToggleUserStatus = async (userId: string, active: boolean) => {
         try {
-            const res = await fetch(`/api/users/${userId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ active })
-            })
-            if (res.ok) {
+            const success = await updateUserStatus(userId, active)
+            if (success) {
                 setUsers(users.map(u => u.id === userId ? { ...u, active } as any : u))
             }
         } catch (err) {
@@ -152,7 +146,7 @@ export default function UsersPage() {
                         </button>
 
                         <button
-                            onClick={() => router.push('/admin/settings')}
+                            onClick={() => router.push('/admin?tab=settings')}
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
                         >
                             <Settings className="w-5 h-5" />
@@ -231,7 +225,7 @@ export default function UsersPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <button
-                                                onClick={() => toggleUserStatus(u.id, !u.active)}
+                                                onClick={() => handleToggleUserStatus(u.id, !u.active)}
                                                 className={`text-sm font-medium ${u.active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
                                             >
                                                 {u.active ? 'Desactivar' : 'Activar'}
