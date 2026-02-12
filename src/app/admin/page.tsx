@@ -16,8 +16,8 @@ import {
   Edit3,
   X,
   Star,
-  StarOff,
   ExternalLink,
+  Bookmark,
   Menu,
   ChevronLeft,
   ToggleLeft,
@@ -529,7 +529,7 @@ function AdminContent() {
                     <div className="absolute top-3 left-3 flex gap-2">
                       {property.featured && (
                         <div className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                          <Star className="w-3 h-3" /> Destacada
+                          <Bookmark className="w-3 h-3" /> Destacada
                         </div>
                       )}
                       {!property.active && (
@@ -587,7 +587,7 @@ function AdminContent() {
                           }`}
                         title={property.featured ? 'Quitar destacado' : 'Destacar'}
                       >
-                        {property.featured ? <Star className="w-5 h-5 fill-current" /> : <StarOff className="w-5 h-5" />}
+                        {property.featured ? <Bookmark className="w-5 h-5 fill-current" /> : <Bookmark className="w-5 h-5" />}
                       </button>
                       <button
                         onClick={() => deleteProperty(property.id)}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Script from 'next/script'
-import { MessageCircle, MapPin, Users, Bed, Bath, Star, Home, Instagram, Facebook, PlusCircle } from 'lucide-react'
+import { MessageCircle, MapPin, Users, Bed, Bath, Star, Home, Instagram, Facebook, PlusCircle, Bookmark } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
 
 // TikTok icon component
@@ -212,7 +212,7 @@ export default function HomePage() {
                 <div className="lg:sticky lg:top-24 space-y-6">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                      <Bookmark className="w-5 h-5 text-yellow-400 fill-yellow-400" />
                       <span className="text-sm font-medium text-gray-600">Destacado</span>
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -326,7 +326,7 @@ export default function HomePage() {
                     {property.featured && (
                       <div className="absolute top-4 left-4">
                         <span className="bg-primary-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-white" />
+                          <Bookmark className="w-3 h-3 fill-white" />
                           Destacado
                         </span>
                       </div>
