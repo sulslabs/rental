@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Script from 'next/script'
 import { MessageCircle, MapPin, Users, Bed, Bath, Star, Home, Instagram, Facebook, PlusCircle, Bookmark, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
+import FAQ from '@/components/FAQ'
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -505,6 +506,9 @@ export default function HomePage() {
                   </a>
                 )}
               </div>
+
+              {/* FAQ Section */}
+              <FAQ />
             </div>
           </div>
         </section>
