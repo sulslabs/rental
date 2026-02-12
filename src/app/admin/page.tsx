@@ -815,6 +815,7 @@ function AdminContent() {
             setEditingProperty(null)
           }}
           saving={saving}
+          userRole={user?.role || 'owner'}
         />
       ) : null}
     </div >
@@ -826,12 +827,14 @@ function PropertyModal({
   property,
   onSave,
   onClose,
-  saving
+  saving,
+  userRole
 }: {
   property: Property
   onSave: (property: Property) => void
   onClose: () => void
   saving: boolean
+  userRole: 'admin' | 'owner'
 }) {
   const [form, setForm] = useState<Property>({
     ...property,
@@ -1085,11 +1088,16 @@ function PropertyModal({
                   type="text"
                   value={form.rating || ''}
                   onChange={(e) => setForm({ ...form, rating: e.target.value })}
-                  className="admin-input !pl-11"
+                  className={`admin-input !pl-11 ${userRole !== 'admin' ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
                   placeholder="Ej: 4.85"
+                  readOnly={userRole !== 'admin'}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Se muestra junto al título y ubicación</p>
+              {userRole === 'admin' ? (
+                <p className="text-xs text-gray-500 mt-1">Se muestra junto al título y ubicación</p>
+              ) : (
+                <p className="text-xs text-primary-500 mt-1 font-medium">Solo los administradores pueden editar este campo</p>
+              )}
             </div>
           </div>
 
