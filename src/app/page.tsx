@@ -21,6 +21,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [isAutoRotating, setIsAutoRotating] = useState(true)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
+  const [isFaqOpen, setIsFaqOpen] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -163,6 +164,7 @@ export default function HomePage() {
               </div>
               <nav className="hidden md:flex items-center gap-6">
                 <a href="#propiedades" className="text-gray-600 hover:text-primary-500 transition-colors">Propiedades</a>
+                <button onClick={() => setIsFaqOpen(true)} className="text-gray-600 hover:text-primary-500 transition-colors">FAQ</button>
                 <a href="#contacto" className="text-gray-600 hover:text-primary-500 transition-colors">Contacto</a>
                 <a
                   href={whatsappLink}
@@ -508,7 +510,6 @@ export default function HomePage() {
               </div>
 
               {/* FAQ Section */}
-              <FAQ />
             </div>
           </div>
         </section>
@@ -596,6 +597,31 @@ export default function HomePage() {
                 <img src={img} alt="" className="w-full h-full object-cover" />
               </button>
             ))}
+          </div>
+        </div>
+      )}
+      {/* FAQ Modal */}
+      {isFaqOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+          <button
+            onClick={() => setIsFaqOpen(false)}
+            className="absolute top-6 right-6 text-white/70 hover:text-white p-2 transition-colors z-10"
+          >
+            <X className="w-8 h-8" />
+          </button>
+
+          <div className="w-full max-w-4xl bg-white rounded-2xl overflow-hidden max-h-[85vh] flex flex-col relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="overflow-y-auto p-4 md:p-8 custom-scrollbar">
+              <FAQ />
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-center sticky bottom-0 z-10">
+              <button
+                onClick={() => setIsFaqOpen(false)}
+                className="text-gray-500 hover:text-gray-800 font-medium px-4 py-2 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

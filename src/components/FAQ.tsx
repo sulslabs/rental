@@ -78,15 +78,15 @@ export default function FAQ() {
     }
 
     return (
-        <div className="mt-16 w-full max-w-3xl mx-auto">
-            <h3 className="text-3xl font-bold text-gray-900 mb-10 text-center px-4">Preguntas Frecuentes</h3>
+        <div className="w-full max-w-3xl mx-auto">
+            <h3 className="text-3xl font-bold text-gray-900 mb-6 text-center px-4">Preguntas Frecuentes</h3>
 
-            <div className="space-y-10 px-4">
+            <div className="space-y-8 px-4">
                 {faqCategories.map((category, catIndex) => (
                     <div key={catIndex}>
-                        <div className="flex items-center gap-3 mb-5">
-                            <div className="h-8 w-1 bg-primary-500 rounded-full"></div>
-                            <h4 className="text-xl font-bold text-gray-900">{category.title}</h4>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="h-6 w-1 bg-primary-500 rounded-full"></div>
+                            <h4 className="text-lg font-bold text-gray-900">{category.title}</h4>
                         </div>
 
                         <div className="space-y-3">
@@ -101,7 +101,7 @@ export default function FAQ() {
                                             onClick={() => toggle(catIndex, itemIndex)}
                                             className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
                                         >
-                                            <span className="font-semibold text-gray-800 pr-4">{item.question}</span>
+                                            <span className="font-semibold text-gray-800 pr-4 text-sm md:text-base">{item.question}</span>
                                             {isOpen ? (
                                                 <ChevronUp className="w-5 h-5 text-primary-500 flex-shrink-0" />
                                             ) : (
@@ -112,7 +112,7 @@ export default function FAQ() {
                                             className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
                                                 }`}
                                         >
-                                            <div className="p-4 pt-0 text-gray-600 border-t border-gray-50 bg-gray-50/30">
+                                            <div className="p-4 pt-0 text-sm md:text-base text-gray-600 border-t border-gray-50 bg-gray-50/30">
                                                 {item.answer}
                                             </div>
                                         </div>
