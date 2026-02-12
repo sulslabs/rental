@@ -413,7 +413,7 @@ function AdminContent() {
         <div className="p-6">
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <div className="max-w-2xl">
+            <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div>
@@ -492,9 +492,6 @@ function AdminContent() {
                     </div>
                   </div>
 
-                  <div className="pt-4 text-xs text-gray-400 italic">
-                    Nota: El rol `{user?.role}` no puede ser modificado por el usuario.
-                  </div>
                   <div className="pt-4">
                     <button
                       type="submit"
