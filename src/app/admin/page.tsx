@@ -269,7 +269,8 @@ function AdminContent() {
     amenities: [],
     guests: 2,
     bedrooms: 1,
-    bathrooms: 1
+    bathrooms: 1,
+    rating: 'N/A'
   })
 
   // Redirecting...
@@ -858,6 +859,7 @@ function PropertyModal({
           guests: data.guests || form.guests,
           bedrooms: data.bedrooms || form.bedrooms,
           bathrooms: data.bathrooms || form.bathrooms,
+          rating: data.rating || form.rating,
           amenities: data.amenities && data.amenities.length > 0 ? data.amenities : form.amenities,
           images: data.images && data.images.length > 0
             ? (data.images.length >= 3 ? data.images.slice(0, 3) : [...data.images, ...Array(3 - data.images.length).fill('')])
@@ -1075,6 +1077,20 @@ function PropertyModal({
                   placeholder="por noche"
                 />
               </div>
+            </div>
+            <div>
+              <label className="admin-label">Puntuación (Rating)</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={form.rating || ''}
+                  onChange={(e) => setForm({ ...form, rating: e.target.value })}
+                  className="admin-input pl-10"
+                  placeholder="Ej: 4.85"
+                />
+                <Star className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Se muestra junto al título y ubicación</p>
             </div>
           </div>
 
