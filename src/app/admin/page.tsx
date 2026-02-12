@@ -74,6 +74,12 @@ function AdminContent() {
     email: '',
     phone: ''
   })
+  const [passwords, setPasswords] = useState({
+    old: '',
+    new: '',
+    confirm: ''
+  })
+  const [showPass, setShowPass] = useState(false)
   const searchParams = useSearchParams()
 
   // Handle tab from query param
@@ -220,16 +226,28 @@ function AdminContent() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
+
+    if (passwords.new && passwords.new !== passwords.confirm) {
+      showMessage('error', 'Las nuevas contraseñas no coinciden')
+      return
+    }
+
     setSaving(true)
     try {
-      const success = await updateMe(profileData)
+      const success = await updateMe({
+        ...profileData,
+        oldPassword: passwords.old,
+        newPassword: passwords.new
+      } as any)
+
       if (success) {
         showMessage('success', 'Datos actualizados correctamente')
+        setPasswords({ old: '', new: '', confirm: '' })
       } else {
         showMessage('error', 'Error al actualizar datos')
       }
-    } catch {
-      showMessage('error', 'Error de conexión')
+    } catch (err: any) {
+      showMessage('error', err.message || 'Error de conexión')
     } finally {
       setSaving(false)
     }
@@ -428,6 +446,52 @@ function AdminContent() {
                       onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                     />
                   </div>
+                  <div className="pt-6 border-t mt-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      Cambiar Contraseña
+                      <span className="text-xs font-normal text-gray-400 font-normal ml-2">(opcional)</span>
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="admin-label">Contraseña Actual</label>
+                        <input
+                          type={showPass ? "text" : "password"}
+                          className="admin-input"
+                          value={passwords.old}
+                          onChange={(e) => setPasswords({ ...passwords, old: e.target.value })}
+                          placeholder="Requerido solo si vas a cambiarla"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="admin-label">Nueva Contraseña</label>
+                          <input
+                            type={showPass ? "text" : "password"}
+                            className="admin-input"
+                            value={passwords.new}
+                            onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="admin-label">Confirmar Contraseña</label>
+                          <input
+                            type={showPass ? "text" : "password"}
+                            className="admin-input"
+                            value={passwords.confirm}
+                            onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPass(!showPass)}
+                        className="text-xs text-primary-500 hover:text-primary-600 font-medium"
+                      >
+                        {showPass ? 'Ocultar contraseñas' : 'Mostrar contraseñas'}
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="pt-4 text-xs text-gray-400 italic">
                     Nota: El rol `{user?.role}` no puede ser modificado por el usuario.
                   </div>
