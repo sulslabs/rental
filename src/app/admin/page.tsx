@@ -157,6 +157,15 @@ function AdminContent() {
 
   // Save property
   const saveProperty = async (property: Property) => {
+    // Limit featured properties for owners to 2
+    if (user?.role === 'owner' && property.featured) {
+      const alreadyFeaturedCount = properties.filter(p => p.featured && p.id !== property.id).length
+      if (alreadyFeaturedCount >= 2) {
+        showMessage('error', 'Límite alcanzado: Como propietario solo puedes tener hasta 2 propiedades destacadas en el Hero.')
+        return
+      }
+    }
+
     setSaving(true)
     try {
       const isNew = property.id.startsWith('new-')
