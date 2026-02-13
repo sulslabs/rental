@@ -69,6 +69,7 @@ export interface Lead {
   email?: string
   propertyId?: string
   propertyName?: string  // Enriched from backend
+  propertyReference?: string // Enriched from backend
   checkin?: string
   checkout?: string
   guests?: number

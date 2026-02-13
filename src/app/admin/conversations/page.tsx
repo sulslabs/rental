@@ -287,6 +287,11 @@ export default function ConversationsPage() {
                                                 {lead.propertyName && (
                                                     <p className="text-primary-600 font-medium">
                                                         🏠 {lead.propertyName}
+                                                        {lead.propertyReference && (
+                                                            <span className="text-gray-500 text-xs ml-2 font-normal">
+                                                                (Ref: {lead.propertyReference})
+                                                            </span>
+                                                        )}
                                                     </p>
                                                 )}
 
