@@ -20,13 +20,16 @@ import {
   Star,
   Menu,
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   ToggleLeft,
   ToggleRight,
   Hash,
   UserCircle,
   BarChart3,
   Upload,
-  Loader2
+  Loader2,
+  Pin
 } from 'lucide-react'
 import { uploadToStorage } from '@/lib/firebase'
 import type { Property, SiteSettings } from '@/types'
@@ -977,6 +980,13 @@ function AdminContent() {
   )
 }
 
+// Image Item for dynamic management
+interface ImageItem {
+  url: string
+  isCover: boolean
+  source: 'manual' | 'airbnb'
+}
+
 // Property Edit Modal Component
 function PropertyModal({
   property,
@@ -991,14 +1001,25 @@ function PropertyModal({
   saving: boolean
   userRole: 'admin' | 'owner'
 }) {
+  // Convert property.images to ImageItems on load
+  const initialImages: ImageItem[] = property.images
+    .filter(url => url && url.trim() !== '')
+    .map((url, idx) => ({
+      url,
+      isCover: idx === 0,
+      source: 'manual' as const
+    }))
+
   const [form, setForm] = useState<Property>({
     ...property,
     active: property.active !== false
   })
+  const [images, setImages] = useState<ImageItem[]>(initialImages)
   const [amenityInput, setAmenityInput] = useState('')
   const [importing, setImporting] = useState(false)
   const [importError, setImportError] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [manualUrlInput, setManualUrlInput] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleImport = async () => {
@@ -1009,6 +1030,7 @@ function PropertyModal({
       const data = await importAirbnb(form.airbnbUrl.trim())
 
       if (data) {
+        // Update form fields
         setForm({
           ...form,
           title: data.title || form.title,
@@ -1020,11 +1042,18 @@ function PropertyModal({
           bathrooms: data.bathrooms || form.bathrooms,
           rating: data.rating || form.rating,
           amenities: data.amenities && data.amenities.length > 0 ? data.amenities : form.amenities,
-          images: data.images && data.images.length > 0
-            ? data.images.slice(0, 15)
-            : form.images,
           airbnbUrl: data.airbnbUrl || form.airbnbUrl
         })
+
+        // Convert Airbnb images to ImageItems (NO LIMIT for Airbnb)
+        if (data.images && data.images.length > 0) {
+          const airbnbImages: ImageItem[] = data.images.map((url: string, idx: number) => ({
+            url,
+            isCover: idx === 0,
+            source: 'airbnb' as const
+          }))
+          setImages(airbnbImages)
+        }
       } else {
         setImportError('Failed to import. Check the URL and try again.')
       }
@@ -1048,13 +1077,19 @@ function PropertyModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Phase 2: Clean image array by filtering empty strings before saving
-    const cleanedForm = {
-      ...form,
-      images: form.images.filter(img => img && img.trim() !== '')
-    }
+    // Convert ImageItems to URL array (cover first)
+    const sortedImages = [...images].sort((a, b) => {
+      if (a.isCover) return -1
+      if (b.isCover) return 1
+      return 0
+    })
 
-    onSave(cleanedForm)
+    const imageUrls = sortedImages.map(img => img.url)
+
+    onSave({
+      ...form,
+      images: imageUrls
+    })
     onClose()
   }
 
@@ -1069,28 +1104,24 @@ function PropertyModal({
     setForm({ ...form, amenities: form.amenities.filter((_, i) => i !== index) })
   }
 
-  const updateImage = (index: number, url: string) => {
-    const newImages = [...form.images]
-    newImages[index] = url
-    setForm({ ...form, images: newImages })
-  }
+  // === IMAGE MANAGEMENT FUNCTIONS ===
 
-  const addImage = () => {
-    if (form.images.length >= 15) return
-    setForm({ ...form, images: [...form.images, ''] })
-  }
+  // Add manual URL
+  const addManualUrl = () => {
+    if (!manualUrlInput.trim()) return
 
-  const removeImage = (index: number) => {
-    if (form.images.length <= 1) {
-      // Don't remove the last one, just clear it
-      const newImages = [...form.images]
-      newImages[0] = ''
-      setForm({ ...form, images: newImages })
+    const manualImages = images.filter(img => img.source === 'manual')
+    if (manualImages.length >= 15) {
+      alert('Máximo 15 imágenes para carga manual')
       return
     }
-    setForm({ ...form, images: form.images.filter((_, i) => i !== index) })
+
+    const isCover = images.length === 0
+    setImages([...images, { url: manualUrlInput.trim(), isCover, source: 'manual' }])
+    setManualUrlInput('')
   }
 
+  // Upload file to Firebase
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -1101,8 +1132,15 @@ function PropertyModal({
       return
     }
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+    if (file.size > 2 * 1024 * 1024) {
       alert('La imagen no debe superar los 2MB')
+      return
+    }
+
+    // Check manual limit
+    const manualImages = images.filter(img => img.source === 'manual')
+    if (manualImages.length >= 15) {
+      alert('Máximo 15 imágenes para carga manual')
       return
     }
 
@@ -1113,19 +1151,9 @@ function PropertyModal({
       const url = await uploadToStorage(file)
       console.log('Upload successful, URL:', url)
 
-      // Add to images list
-      // If the first image slot is empty, use it. Otherwise append.
-      let newImages = [...form.images]
-      if (newImages.length === 1 && newImages[0] === '') {
-        newImages[0] = url
-      } else {
-        if (newImages.length < 15) {
-          newImages.push(url)
-        } else {
-          alert('Límite de 15 imágenes alcanzado')
-        }
-      }
-      setForm({ ...form, images: newImages })
+      const isCover = images.length === 0
+      setImages([...images, { url, isCover, source: 'manual' }])
+
       alert('Imagen subida correctamente')
     } catch (error: any) {
       console.error('Upload error:', error)
@@ -1134,11 +1162,46 @@ function PropertyModal({
       alert(`Error al subir la imagen: ${error?.message || error}`)
     } finally {
       setUploading(false)
-      // Reset input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
     }
+  }
+
+  // Set image as cover
+  const setAsCover = (index: number) => {
+    setImages(images.map((img, idx) => ({
+      ...img,
+      isCover: idx === index
+    })))
+  }
+
+  // Remove image
+  const removeImage = (index: number) => {
+    const newImages = images.filter((_, idx) => idx !== index)
+
+    // If we removed the cover, make the first image the new cover
+    if (images[index].isCover && newImages.length > 0) {
+      newImages[0].isCover = true
+    }
+
+    setImages(newImages)
+  }
+
+  // Move image up
+  const moveImageUp = (index: number) => {
+    if (index === 0) return
+    const newImages = [...images]
+      ;[newImages[index - 1], newImages[index]] = [newImages[index], newImages[index - 1]]
+    setImages(newImages)
+  }
+
+  // Move image down
+  const moveImageDown = (index: number) => {
+    if (index === images.length - 1) return
+    const newImages = [...images]
+      ;[newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]]
+    setImages(newImages)
   }
 
 
@@ -1358,10 +1421,10 @@ function PropertyModal({
             </div>
           </div>
 
-          {/* Images */}
+          {/* Images - Dynamic List */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="admin-label !mb-0">Imágenes (URLs)</label>
+              <label className="admin-label !mb-0">Imágenes</label>
               <div className="flex gap-2">
                 <input
                   type="file"
@@ -1373,61 +1436,123 @@ function PropertyModal({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading || form.images.length >= 15}
+                  disabled={uploading || images.filter(img => img.source === 'manual').length >= 15}
                   className="text-xs font-bold text-gray-600 hover:text-gray-900 flex items-center gap-1 disabled:text-gray-400 border border-gray-200 rounded px-2 py-1 bg-gray-50"
                 >
                   {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                   {uploading ? 'Subiendo...' : 'Subir Foto'}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={addImage}
-                  disabled={form.images.length >= 15}
-                  className="text-xs font-bold text-primary-500 hover:text-primary-600 flex items-center gap-1 disabled:text-gray-400"
-                >
-                  <Plus className="w-3 h-3" /> Añadir URL ({form.images.length}/15)
-                </button>
               </div>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
-              Pega URLs de imágenes. La primera será la principal. Máximo 15.
-            </p>
-            <div className="space-y-3">
-              {form.images.map((imgUrl, index) => (
-                <div key={index} className="flex gap-3 items-center group">
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
-                    {imgUrl ? (
-                      <img src={imgUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Image className="w-6 h-6 text-gray-300" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 relative">
-                    <input
-                      type="url"
-                      value={imgUrl}
-                      onChange={(e) => updateImage(index, e.target.value)}
-                      className="admin-input !py-2"
-                      placeholder={`URL de imagen ${index + 1}${index === 0 ? ' (principal)' : ''}`}
-                    />
-                    {index === 0 && (
-                      <span className="absolute -top-2 left-3 bg-primary-500 text-[10px] text-white px-1.5 rounded-sm font-bold uppercase tracking-wider">Portada</span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Eliminar imagen"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+
+            {/* Manual URL Input */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="url"
+                value={manualUrlInput}
+                onChange={(e) => setManualUrlInput(e.target.value)}
+                className="admin-input flex-1 !py-2"
+                placeholder="Pegar URL de imagen..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addManualUrl()
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={addManualUrl}
+                disabled={images.filter(img => img.source === 'manual').length >= 15}
+                className="text-xs font-bold text-primary-500 hover:text-primary-600 flex items-center gap-1 disabled:text-gray-400 border border-primary-200 rounded px-3 py-2"
+              >
+                <Plus className="w-3 h-3" /> Añadir
+              </button>
             </div>
+
+            {/* Image Counter */}
+            <p className="text-sm text-gray-500 mb-4">
+              {images.filter(img => img.source === 'manual').length}/15 imágenes manuales
+              {images.filter(img => img.source === 'airbnb').length > 0 &&
+                ` • ${images.filter(img => img.source === 'airbnb').length} de Airbnb`
+              }
+            </p>
+
+            {/* Dynamic Image List */}
+            {images.length === 0 ? (
+              <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                <Image className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">No hay imágenes. Sube una foto o pega una URL.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {images.map((img, index) => (
+                  <div key={index} className="flex gap-3 items-center group border border-gray-200 rounded-lg p-3 bg-white hover:border-primary-300 transition-colors">
+                    {/* Thumbnail */}
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                      <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    </div>
+
+                    {/* URL Display */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-600 truncate">{img.url}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {img.isCover ? (
+                          <span className="inline-flex items-center gap-1 bg-primary-500 text-[10px] text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            <Pin className="w-3 h-3 fill-white" />
+                            Portada
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setAsCover(index)}
+                            className="inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-primary-500 font-medium"
+                          >
+                            <Pin className="w-3 h-3" />
+                            Marcar portada
+                          </button>
+                        )}
+                        <span className="text-[10px] text-gray-400">
+                          {img.source === 'airbnb' ? '🏠 Airbnb' : '📸 Manual'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Reorder Buttons */}
+                    <div className="flex flex-col gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveImageUp(index)}
+                        disabled={index === 0}
+                        className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Mover arriba"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveImageDown(index)}
+                        disabled={index === images.length - 1}
+                        className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Mover abajo"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Delete Button */}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Eliminar imagen"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
 
