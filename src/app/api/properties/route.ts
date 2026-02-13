@@ -9,7 +9,14 @@ export const revalidate = 0
 export async function GET() {
   try {
     const properties = await getProperties()
-    return NextResponse.json(properties, {
+
+    // Phase 2: Normalize image arrays by filtering empty strings
+    const normalizedProperties = properties.map(property => ({
+      ...property,
+      images: property.images.filter(img => img && img.trim() !== '')
+    }))
+
+    return NextResponse.json(normalizedProperties, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
