@@ -304,14 +304,14 @@ export default function ConversationsPage() {
 
                                                 {lead.checkin && (
                                                     <p>
-                                                        📅 {new Date(lead.checkin).toLocaleDateString('es-UY')} - {new Date(lead.checkout!).toLocaleDateString('es-UY')}
+                                                        📅 {new Date(lead.checkin).toLocaleDateString('es-UY', { timeZone: 'America/Montevideo' })} - {new Date(lead.checkout!).toLocaleDateString('es-UY', { timeZone: 'America/Montevideo' })}
                                                         {lead.guests && ` • ${lead.guests} huéspedes`}
                                                     </p>
                                                 )}
                                             </div>
 
                                             <p className="text-xs text-gray-400 mt-3">
-                                                {new Date(lead.createdAt).toLocaleString('es-UY')}
+                                                {new Date(lead.createdAt).toLocaleString('es-UY', { timeZone: 'America/Montevideo' })}
                                             </p>
                                         </div>
 
