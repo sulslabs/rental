@@ -5,7 +5,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyBy1Alm4T10vtKM_IIAVcoPs1knWzbPFSc",
     authDomain: "rond-point-rental-487018.firebaseapp.com",
     projectId: "rond-point-rental-487018",
-    storageBucket: "rond-point-rental-487018.appspot.com",
+    storageBucket: "rond-point-rental-487018.firebasestorage.app",
     messagingSenderId: "549090464338",
     appId: "1:549090464338:web:49f6c316f0b9ca64cb458b"
 };
