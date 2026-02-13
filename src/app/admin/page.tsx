@@ -955,7 +955,7 @@ function AdminContent() {
               setEditingProperty(null)
             }}
             saving={saving}
-            userRole={user?.role || 'owner'}
+            userRole={user?.role === 'admin' ? 'admin' : 'owner'}
           />
         ) : null
       }

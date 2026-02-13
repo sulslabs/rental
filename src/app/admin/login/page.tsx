@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { login, User } from '@/lib/data'
+import { login } from '@/lib/data'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function LoginPage() {
