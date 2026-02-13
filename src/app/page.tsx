@@ -13,6 +13,43 @@ const TikTokIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+// Expandable Description Component
+const ExpandableDescription = ({ description }: { description: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const MAX_LENGTH = 200 // Characters to show initially
+
+  const shouldTruncate = description.length > MAX_LENGTH
+  const displayText = isExpanded || !shouldTruncate
+    ? description
+    : description.slice(0, MAX_LENGTH) + '...'
+
+  return (
+    <div className="text-gray-600 text-lg">
+      <p className="whitespace-pre-wrap leading-relaxed">
+        {displayText}
+      </p>
+      {shouldTruncate && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-2 text-primary-500 hover:text-primary-600 font-medium text-sm flex items-center gap-1 transition-colors"
+        >
+          {isExpanded ? (
+            <>
+              Ver menos
+              <ChevronLeft className="w-4 h-4 rotate-90" />
+            </>
+          ) : (
+            <>
+              Ver más
+              <ChevronRight className="w-4 h-4 rotate-90" />
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function HomePage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [settings, setSettings] = useState<SiteSettings | null>(null)
@@ -259,9 +296,7 @@ export default function HomePage() {
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
                       {selectedProperty.title}
                     </h2>
-                    <p className="text-gray-600 text-lg">
-                      {selectedProperty.description}
-                    </p>
+                    <ExpandableDescription description={selectedProperty.description} />
                   </div>
 
                   {/* Property Stats */}
