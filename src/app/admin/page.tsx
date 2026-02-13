@@ -24,6 +24,7 @@ import {
   ToggleRight,
   Hash,
   UserCircle,
+  BarChart3,
 } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
 import {
@@ -348,6 +349,14 @@ function AdminContent() {
             >
               <MessageSquare className="w-5 h-5" />
               {sidebarOpen && <span>Comunicaciones</span>}
+            </button>
+
+            <button
+              onClick={() => router.push('/admin/reports')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+            >
+              <BarChart3 className="w-5 h-5" />
+              {sidebarOpen && <span>Reportes</span>}
             </button>
 
             {user?.role === 'admin' && (
