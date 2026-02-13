@@ -192,9 +192,8 @@ export default function HomePage() {
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-2">
-                <Home className="w-8 h-8 text-primary-500" />
-                <span className="text-xl font-bold text-gray-900">{settings?.siteName}</span>
+              <div className="flex items-center">
+                <img src="/logo_sm.jpeg" alt={settings?.siteName} className="h-12 w-auto" />
               </div>
               <nav className="hidden md:flex items-center gap-6">
                 <a href="#propiedades" className="text-gray-600 hover:text-primary-500 transition-colors">Propiedades</a>
