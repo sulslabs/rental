@@ -12,23 +12,21 @@ import {
     LogOut,
     Image,
     Settings,
-    Clock,
-    ExternalLink,
-    MessageCircle,
-    UserCircle
+    UserCircle,
+    Eye,
+    EyeOff,
+    Trash2
 } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { es } from 'date-fns/locale'
+import type { Lead } from '@/types'
 
 export default function ConversationsPage() {
     const { user, loading: authLoading, logout } = useAuth()
     const router = useRouter()
 
-    const [conversations, setConversations] = useState<any[]>([])
+    const [leads, setLeads] = useState<Lead[]>([])
     const [loading, setLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
-    const [selectedConv, setSelectedConv] = useState<any | null>(null)
-    const [fetchingMessages, setFetchingMessages] = useState(false)
+    const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all')
 
     // Protect route
     useEffect(() => {
@@ -37,15 +35,15 @@ export default function ConversationsPage() {
         }
     }, [user, authLoading, router])
 
-    const fetchConversations = async () => {
+    const fetchLeads = async () => {
         try {
-            const res = await fetch('/api/conversations')
+            const res = await fetch('/api/leads')
             if (res.ok) {
                 const data = await res.json()
-                setConversations(data.conversations || [])
+                setLeads(data.leads || [])
             }
         } catch (err) {
-            console.error('Error fetching conversations:', err)
+            console.error('Error fetching leads:', err)
         } finally {
             setLoading(false)
         }
@@ -53,25 +51,36 @@ export default function ConversationsPage() {
 
     useEffect(() => {
         if (user) {
-            fetchConversations()
+            fetchLeads()
         }
     }, [user])
 
-    const handleSelectConv = async (conv: any) => {
-        setSelectedConv(conv)
-        setFetchingMessages(true)
-        try {
-            const res = await fetch(`/api/conversations/${conv.id}`)
-            if (res.ok) {
-                const data = await res.json()
-                setSelectedConv(data)
-            }
-        } catch (err) {
-            console.error('Error fetching conversion details:', err)
-        } finally {
-            setFetchingMessages(false)
-        }
+    async function handleMarkAsRead(id: string) {
+        const lead = leads.find(l => l.id === id)
+        const newStatus = lead?.status === 'unread' ? 'read' : 'unread'
+
+        await fetch(`/api/leads/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        })
+
+        fetchLeads()
     }
+
+    async function handleDelete(id: string) {
+        if (!confirm('¿Eliminar este mensaje?')) return
+
+        await fetch(`/api/leads/${id}`, { method: 'DELETE' })
+        fetchLeads()
+    }
+
+    const filteredLeads = leads.filter(lead => {
+        if (filter === 'all') return true
+        return lead.status === filter
+    })
+
+    const unreadCount = leads.filter(l => l.status === 'unread').length
 
     if (authLoading || !user) {
         return (
@@ -112,7 +121,16 @@ export default function ConversationsPage() {
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-500 text-white transition-colors"
                         >
                             <MessageSquare className="w-5 h-5" />
-                            {sidebarOpen && <span>Mensajes</span>}
+                            {sidebarOpen && (
+                                <div className="flex items-center gap-2 flex-1">
+                                    <span>Mensajes</span>
+                                    {unreadCount > 0 && (
+                                        <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                         </button>
 
                         <button
@@ -157,98 +175,127 @@ export default function ConversationsPage() {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col min-w-0 bg-white">
-                <header className="bg-white border-b px-6 py-4 flex items-center gap-4">
+            <main className="flex-1 flex flex-col min-w-0 bg-white overflow-auto">
+                <header className="bg-white border-b px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
-                    <h1 className="text-xl font-bold text-gray-900">Conversaciones</h1>
+                    <div className="flex-1">
+                        <h1 className="text-xl font-bold text-gray-900">Mensajes de Interesados</h1>
+                        <p className="text-sm text-gray-600">
+                            {user.role === 'admin' ? 'Todos los leads del sistema' : 'Leads de tus propiedades'}
+                        </p>
+                    </div>
                 </header>
 
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Conversation List */}
-                    <div className="w-1/3 border-r overflow-auto">
-                        {loading ? (
-                            <div className="p-8 text-center text-gray-500">Cargando chats...</div>
-                        ) : conversations.length === 0 ? (
-                            <div className="p-8 text-center text-gray-500">No hay conversaciones activas.</div>
-                        ) : (
-                            <div className="divide-y">
-                                {conversations.map((conv) => (
-                                    <button
-                                        key={conv.id}
-                                        onClick={() => handleSelectConv(conv)}
-                                        className={`w-full p-4 flex flex-col gap-1 text-left hover:bg-gray-50 transition-colors ${selectedConv?.id === conv.id ? 'bg-primary-50 border-r-4 border-r-primary-500' : ''}`}
-                                    >
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold text-gray-900 truncate flex items-center gap-2">
-                                                <MessageCircle className="w-4 h-4 text-primary-500" /> Lead {conv.leadId.substring(0, 5)}
-                                            </span>
-                                            <span className="text-xs text-gray-400">
-                                                {formatDistanceToNow(new Date(conv.updatedAt || conv.updated_at), { addSuffix: true, locale: es })}
-                                            </span>
-                                        </div>
-                                        <div className="text-sm text-gray-500 truncate">
-                                            Canal: {conv.channel || 'whatsapp'}
-                                        </div>
-                                        {conv.context?.discussedProperties?.length > 0 && (
-                                            <div className="text-xs text-primary-600 font-medium">
-                                                Propiedad: {conv.context.discussedProperties[0]}
-                                            </div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                <div className="p-6">
+                    {/* Filters */}
+                    <div className="bg-white rounded-lg shadow-sm p-4 mb-4 flex gap-2">
+                        <button
+                            onClick={() => setFilter('all')}
+                            className={`px-4 py-2 rounded-lg transition-colors ${filter === 'all' ? 'bg-primary-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                        >
+                            Todos ({leads.length})
+                        </button>
+                        <button
+                            onClick={() => setFilter('unread')}
+                            className={`px-4 py-2 rounded-lg transition-colors ${filter === 'unread' ? 'bg-primary-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                        >
+                            No leídos ({unreadCount})
+                        </button>
+                        <button
+                            onClick={() => setFilter('read')}
+                            className={`px-4 py-2 rounded-lg transition-colors ${filter === 'read' ? 'bg-primary-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                        >
+                            Leídos ({leads.length - unreadCount})
+                        </button>
                     </div>
 
-                    {/* Chat Content */}
-                    <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden">
-                        {selectedConv ? (
-                            <>
-                                <div className="p-4 bg-white border-b flex justify-between items-center">
-                                    <div>
-                                        <h2 className="font-bold text-gray-900">Detalles del Lead</h2>
-                                        <p className="text-sm text-gray-500">ID: {selectedConv.leadId}</p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${selectedConv.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                                            }`}>
-                                            {selectedConv.status}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 overflow-auto p-6 space-y-4">
-                                    {fetchingMessages ? (
-                                        <div className="flex justify-center py-8">
-                                            <div className="w-8 h-8 border-3 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-                                        </div>
-                                    ) : selectedConv.messages?.map((msg: any) => (
-                                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
-                                            <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${msg.role === 'user'
-                                                ? 'bg-white text-gray-800'
-                                                : 'bg-primary-500 text-white'
-                                                }`}>
-                                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                                <p className={`text-[10px] mt-2 ${msg.role === 'user' ? 'text-gray-400' : 'text-primary-100'}`}>
-                                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </p>
+                    {/* Leads List */}
+                    {loading ? (
+                        <div className="flex justify-center py-12">
+                            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : filteredLeads.length === 0 ? (
+                        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                            <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <p className="text-gray-500 text-lg">
+                                No hay mensajes {filter !== 'all' ? (filter === 'unread' ? 'no leídos' : 'leídos') : 'aún'}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {filteredLeads.map(lead => (
+                                <div
+                                    key={lead.id}
+                                    className={`bg-white rounded-lg shadow-sm p-5 border-l-4 transition-all ${lead.status === 'unread'
+                                        ? 'border-blue-500 bg-blue-50/30'
+                                        : 'border-gray-200'
+                                        }`}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <h3 className="font-semibold text-lg">{lead.name || 'Sin nombre'}</h3>
+                                                {lead.status === 'unread' && (
+                                                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                                                        Nuevo
+                                                    </span>
+                                                )}
                                             </div>
+
+                                            <div className="space-y-1 text-sm text-gray-600">
+                                                <p>📧 {lead.email}</p>
+                                                <p>📱 {lead.phone}</p>
+
+                                                {lead.propertyName && (
+                                                    <p className="text-primary-600 font-medium">
+                                                        🏠 {lead.propertyName}
+                                                    </p>
+                                                )}
+
+                                                {lead.checkin && (
+                                                    <p>
+                                                        📅 {new Date(lead.checkin).toLocaleDateString('es-UY')} - {new Date(lead.checkout!).toLocaleDateString('es-UY')}
+                                                        {lead.guests && ` • ${lead.guests} huéspedes`}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <p className="text-xs text-gray-400 mt-3">
+                                                {new Date(lead.createdAt).toLocaleString('es-UY')}
+                                            </p>
                                         </div>
-                                    ))}
+
+                                        <div className="flex gap-2 ml-4">
+                                            <button
+                                                onClick={() => handleMarkAsRead(lead.id)}
+                                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                                title={lead.status === 'unread' ? 'Marcar como leído' : 'Marcar como no leído'}
+                                            >
+                                                {lead.status === 'unread' ? (
+                                                    <Eye className="w-5 h-5 text-blue-600" />
+                                                ) : (
+                                                    <EyeOff className="w-5 h-5 text-gray-400" />
+                                                )}
+                                            </button>
+
+                                            <button
+                                                onClick={() => handleDelete(lead.id)}
+                                                className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </>
-                        ) : (
-                            <div className="flex-1 flex items-center justify-center text-gray-400 flex-col gap-4">
-                                <MessageSquare className="w-16 h-16 opacity-20" />
-                                <p>Selecciona una conversación para ver los detalles.</p>
-                            </div>
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

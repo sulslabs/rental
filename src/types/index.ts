@@ -16,6 +16,8 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   rating?: string;
+  area?: number; // Keep for backward compatibility
+  ownerId?: string; // Keep for backward compatibility
 }
 
 export interface SiteSettings {
@@ -37,27 +39,40 @@ export interface SiteSettings {
   customHeadCode?: string;       // Código personalizado para <head>
 }
 
-export interface NotificationPreferences {
-  whatsapp: {
-    enabled: boolean;
-    schedule: 'always' | 'business_hours';
-  };
-  email: {
-    enabled: boolean;
-    schedule: 'always';
-  };
-  timezone: string;
+export interface User {
+  id: string
+  email: string
+  name: string
+  phone?: string
+  role: 'admin' | 'owner'
+  notificationPreferences?: {
+    whatsapp: {
+      enabled: boolean
+      schedule: 'always' | 'business_hours'
+    }
+    email: {
+      enabled: boolean
+      schedule: 'always' | 'business_hours'
+    }
+    timezone: string
+  }
 }
 
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  phone?: string;
-  avatar?: string;
-  role?: 'admin' | 'owner' | 'user';
-  active?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  notificationPreferences?: NotificationPreferences;
+/**
+ * Simplified lead for direct contact registrations
+ * Displayed in /admin/conversations
+ */
+export interface Lead {
+  id: string
+  phone: string
+  name?: string
+  email?: string
+  propertyId?: string
+  propertyName?: string  // Enriched from backend
+  checkin?: string
+  checkout?: string
+  guests?: number
+  status: 'unread' | 'read' | 'archived'
+  createdAt: string
+  updatedAt: string
 }
