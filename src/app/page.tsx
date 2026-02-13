@@ -253,35 +253,43 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Thumbnail Images */}
-                  <div className="grid grid-cols-3 gap-3">
-                    {selectedProperty.images.slice(0, 3).map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          setActiveImage(idx)
-                          setIsGalleryOpen(true)
-                          setIsAutoRotating(false)
-                        }}
-                        className={`relative aspect-[4/3] rounded-lg overflow-hidden transition-all ${activeImage === idx
-                          ? 'ring-2 ring-primary-500 ring-offset-2'
-                          : 'opacity-70 hover:opacity-100'
-                          }`}
-                      >
-                        <img
-                          src={img}
-                          alt={`${selectedProperty.title} - ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {idx === 2 && selectedProperty.images.length > 3 && (
-                          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
-                            <span className="text-lg font-bold">+{selectedProperty.images.length - 3}</span>
-                            <span className="text-[10px] uppercase tracking-wider font-medium">Ver más</span>
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+
+                  {/* Thumbnail Images - Only show if more than 1 image */}
+                  {(() => {
+                    const validImages = selectedProperty.images.filter(img => img && img.trim() !== '')
+                    if (validImages.length <= 1) return null
+
+                    return (
+                      <div className="grid grid-cols-3 gap-3">
+                        {validImages.slice(0, 3).map((img, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setActiveImage(idx)
+                              setIsGalleryOpen(true)
+                              setIsAutoRotating(false)
+                            }}
+                            className={`relative aspect-[4/3] rounded-lg overflow-hidden transition-all ${activeImage === idx
+                              ? 'ring-2 ring-primary-500 ring-offset-2'
+                              : 'opacity-70 hover:opacity-100'
+                              }`}
+                          >
+                            <img
+                              src={img}
+                              alt={`${selectedProperty.title} - ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            {idx === 2 && validImages.length > 3 && (
+                              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
+                                <span className="text-lg font-bold">+{validImages.length - 3}</span>
+                                <span className="text-[10px] uppercase tracking-wider font-medium">Ver más</span>
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )
+                  })()}
                 </div>
 
                 {/* Property Info */}

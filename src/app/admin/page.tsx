@@ -1047,7 +1047,15 @@ function PropertyModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(form)
+
+    // Phase 2: Clean image array by filtering empty strings before saving
+    const cleanedForm = {
+      ...form,
+      images: form.images.filter(img => img && img.trim() !== '')
+    }
+
+    onSave(cleanedForm)
+    onClose()
   }
 
   const addAmenity = () => {
