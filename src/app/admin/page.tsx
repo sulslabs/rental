@@ -168,7 +168,7 @@ function AdminContent() {
 
     setSaving(true)
     try {
-      const isNew = property.id.startsWith('new-')
+      const isNew = !property.id || property.id === '' || property.id.startsWith('new-')
 
       // Ensure propertyId property is handled correctly by lib/data functions
       // persistProperty (saveProperty in lib/data) handles POST/PUT based on existence of id
@@ -177,6 +177,7 @@ function AdminContent() {
 
       let savedProperty;
       if (isNew) {
+        // Remove empty ID so backend generates it
         const { id, ...newPropData } = property
         savedProperty = await persistProperty(newPropData)
       } else {
@@ -264,7 +265,7 @@ function AdminContent() {
 
   // New property
   const newProperty = (): Property => ({
-    id: `new-${Date.now()}`,
+    id: '', // Backend will generate ID
     referenceCode: '',
     title: '',
     description: '',
@@ -552,9 +553,9 @@ function AdminContent() {
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-1">
                       <h3 className="font-bold text-gray-900">{property.title || 'Sin título'}</h3>
-                      {property.referenceCode && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono" title="Ficha">
-                          {property.referenceCode}
+                      {property.id && (
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono" title="ID Interno">
+                          {property.id}
                         </span>
                       )}
                       {property.airbnbId && (
@@ -616,15 +617,8 @@ function AdminContent() {
           {activeTab === 'settings' && settings && (
             <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 font-mono">
-                    Perfil {user?.role === 'admin' ? 'Administrador' : 'Propietario'}
-                  </h3>
-                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 mb-6">
-                    <p className="text-sm text-gray-600"><strong>Nombre:</strong> {user?.name}</p>
-                    <p className="text-sm text-gray-600"><strong>Email:</strong> {user?.email}</p>
-                  </div>
 
+                <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4">Información General</h3>
                   <div className="space-y-4">
                     <div>
@@ -677,15 +671,6 @@ function AdminContent() {
                         onChange={(e) => setSettings({ ...settings, whatsappMessage: e.target.value })}
                         className="admin-input"
                         rows={2}
-                      />
-                    </div>
-                    <div>
-                      <label className="admin-label">Email</label>
-                      <input
-                        type="email"
-                        value={settings.email}
-                        onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-                        className="admin-input"
                       />
                     </div>
                   </div>
@@ -812,21 +797,23 @@ function AdminContent() {
             </div>
           )}
         </div>
-      </main>
+      </main >
 
       {/* Property Edit Modal */}
-      {showPropertyModal && editingProperty ? (
-        <PropertyModal
-          property={editingProperty}
-          onSave={saveProperty}
-          onClose={() => {
-            setShowPropertyModal(false)
-            setEditingProperty(null)
-          }}
-          saving={saving}
-          userRole={user?.role || 'owner'}
-        />
-      ) : null}
+      {
+        showPropertyModal && editingProperty ? (
+          <PropertyModal
+            property={editingProperty}
+            onSave={saveProperty}
+            onClose={() => {
+              setShowPropertyModal(false)
+              setEditingProperty(null)
+            }}
+            saving={saving}
+            userRole={user?.role || 'owner'}
+          />
+        ) : null
+      }
     </div >
   )
 }
@@ -1037,18 +1024,6 @@ function PropertyModal({
             </button>
           </div>
 
-          {/* Reference Code */}
-          <div>
-            <label className="admin-label">Código de Ficha</label>
-            <input
-              type="text"
-              value={form.referenceCode || ''}
-              onChange={(e) => setForm({ ...form, referenceCode: e.target.value })}
-              className="admin-input"
-              placeholder="PDE-001"
-            />
-            <p className="text-xs text-gray-500 mt-1">Código interno para identificar la propiedad (ej: PDE-001)</p>
-          </div>
 
           {/* Basic Info */}
           <div className="grid md:grid-cols-2 gap-4">
