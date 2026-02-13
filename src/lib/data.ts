@@ -1,6 +1,6 @@
 import type { Property, SiteSettings, User } from '@/types'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rond-point-rentals-ai-kx5aus62lq-uc.a.run.app'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rond-point-rentals-ai-549090464338.us-central1.run.app'
 
 // Token management
 const getAuthToken = () => {
@@ -247,4 +247,24 @@ export async function updateMe(userData: Partial<User>): Promise<boolean> {
     return true
   }
   return false
+}
+
+// Lead Management
+export async function getLeads(): Promise<any> {
+  return await apiFetch<any>('leads')
+}
+
+export async function updateLead(id: string, updates: any): Promise<boolean> {
+  const data = await apiFetch<{ success: boolean }>(`leads/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates)
+  })
+  return !!data?.success
+}
+
+export async function deleteLead(id: string): Promise<boolean> {
+  const data = await apiFetch<{ success: boolean }>(`leads/${id}`, {
+    method: 'DELETE'
+  })
+  return !!data?.success
 }
