@@ -17,13 +17,15 @@ import {
     TrendingUp,
     Users,
     Calendar,
-    Eye
+    Eye,
+    CheckCircle2
 } from 'lucide-react'
 
 interface ReportStats {
     totalLeads: number
     unreadLeads: number
     readLeads: number
+    closedLeads: number
     leadsLast7Days: number
     leadsLast30Days: number
     topProperties: Array<{ name: string; count: number }>
@@ -37,6 +39,7 @@ export default function ReportsPage() {
         totalLeads: 0,
         unreadLeads: 0,
         readLeads: 0,
+        closedLeads: 0,
         leadsLast7Days: 0,
         leadsLast30Days: 0,
         topProperties: []
@@ -199,7 +202,7 @@ export default function ReportsPage() {
                     ) : (
                         <div className="space-y-6">
                             {/* Overview Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                                 <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
                                     <div className="flex items-center justify-between mb-2">
                                         <h3 className="text-sm font-medium text-gray-600">Total Comunicaciones</h3>
@@ -234,6 +237,15 @@ export default function ReportsPage() {
                                     </div>
                                     <p className="text-3xl font-bold text-gray-900">{stats.unreadLeads}</p>
                                     <p className="text-xs text-gray-500 mt-1">Sin leer</p>
+                                </div>
+
+                                <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-teal-500">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-sm font-medium text-gray-600">Concretados</h3>
+                                        <CheckCircle2 className="w-5 h-5 text-teal-500" />
+                                    </div>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.closedLeads}</p>
+                                    <p className="text-xs text-gray-500 mt-1">Cerrados con éxito</p>
                                 </div>
                             </div>
 

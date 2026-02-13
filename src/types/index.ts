@@ -72,6 +72,7 @@ export interface Lead {
   checkin?: string
   checkout?: string
   guests?: number
+  closed?: boolean
   status: 'unread' | 'read' | 'archived'
   createdAt: string
   updatedAt: string

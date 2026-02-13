@@ -16,7 +16,9 @@ import {
     Eye,
     EyeOff,
     Trash2,
-    BarChart3
+    BarChart3,
+    CheckCircle2,
+    Circle
 } from 'lucide-react'
 import type { Lead } from '@/types'
 
@@ -73,6 +75,19 @@ export default function ConversationsPage() {
         if (!confirm('¿Eliminar este mensaje?')) return
 
         await fetch(`/api/leads/${id}`, { method: 'DELETE' })
+        fetchLeads()
+    }
+
+    async function handleToggleClosed(id: string) {
+        const lead = leads.find(l => l.id === id)
+        const newClosed = !lead?.closed
+
+        await fetch(`/api/leads/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ closed: newClosed })
+        })
+
         fetchLeads()
     }
 
@@ -275,6 +290,12 @@ export default function ConversationsPage() {
                                                     </p>
                                                 )}
 
+                                                {lead.closed && (
+                                                    <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium border border-green-200">
+                                                        <CheckCircle2 className="w-3 h-3" /> Concretado
+                                                    </span>
+                                                )}
+
                                                 {lead.checkin && (
                                                     <p>
                                                         📅 {new Date(lead.checkin).toLocaleDateString('es-UY')} - {new Date(lead.checkout!).toLocaleDateString('es-UY')}
@@ -289,6 +310,21 @@ export default function ConversationsPage() {
                                         </div>
 
                                         <div className="flex gap-2 ml-4">
+                                            <button
+                                                onClick={() => handleToggleClosed(lead.id)}
+                                                className={`p-2 rounded-lg transition-colors ${lead.closed
+                                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                                    }`}
+                                                title={lead.closed ? 'Marcar como no concretado' : 'Marcar como concretado'}
+                                            >
+                                                {lead.closed ? (
+                                                    <CheckCircle2 className="w-5 h-5" />
+                                                ) : (
+                                                    <Circle className="w-5 h-5" />
+                                                )}
+                                            </button>
+
                                             <button
                                                 onClick={() => handleMarkAsRead(lead.id)}
                                                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
