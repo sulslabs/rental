@@ -123,7 +123,7 @@ export default function ConversationsPage() {
                             <MessageSquare className="w-5 h-5" />
                             {sidebarOpen && (
                                 <div className="flex items-center gap-2 flex-1">
-                                    <span>Mensajes</span>
+                                    <span>Comunicaciones</span>
                                     {unreadCount > 0 && (
                                         <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">
                                             {unreadCount}
@@ -160,6 +160,15 @@ export default function ConversationsPage() {
                                 {sidebarOpen && <span>Configuración</span>}
                             </button>
                         )}
+
+                        <a
+                            href="/"
+                            target="_blank"
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+                        >
+                            <Eye className="w-5 h-5" />
+                            {sidebarOpen && <span>Ver Sitio</span>}
+                        </a>
                     </nav>
 
                     <div className="space-y-2">
@@ -184,7 +193,7 @@ export default function ConversationsPage() {
                         {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
                     <div className="flex-1">
-                        <h1 className="text-xl font-bold text-gray-900">Mensajes de Interesados</h1>
+                        <h1 className="text-xl font-bold text-gray-900">Comunicaciones de Interesados</h1>
                         <p className="text-sm text-gray-600">
                             {user.role === 'admin' ? 'Todos los leads del sistema' : 'Leads de tus propiedades'}
                         </p>
