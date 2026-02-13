@@ -24,8 +24,11 @@ import {
   ToggleRight,
   Hash,
   UserCircle,
-  BarChart3
+  BarChart3,
+  Upload,
+  Loader2
 } from 'lucide-react'
+import { uploadToStorage } from '@/lib/firebase'
 import type { Property, SiteSettings } from '@/types'
 import {
   getProperties,
@@ -40,7 +43,8 @@ import {
 import type { User } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, useRef } from 'react'
+
 
 type Tab = 'properties' | 'settings' | 'profile'
 
@@ -299,6 +303,7 @@ function AdminContent() {
     bathrooms: 1,
     rating: 'N/A'
   })
+
 
   // Redirecting...
   if (authLoading || (!user && typeof window !== 'undefined')) {
@@ -993,6 +998,8 @@ function PropertyModal({
   const [amenityInput, setAmenityInput] = useState('')
   const [importing, setImporting] = useState(false)
   const [importError, setImportError] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleImport = async () => {
     if (!form.airbnbUrl) return
@@ -1075,6 +1082,52 @@ function PropertyModal({
     }
     setForm({ ...form, images: form.images.filter((_, i) => i !== index) })
   }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validation
+    if (!file.type.startsWith('image/')) {
+      alert('Solo se permiten archivos de imagen')
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      alert('La imagen no debe superar los 2MB')
+      return
+    }
+
+    try {
+      setUploading(true)
+      const url = await uploadToStorage(file)
+
+      // Add to images list
+      // If the first image slot is empty, use it. Otherwise append.
+      let newImages = [...form.images]
+      if (newImages.length === 1 && newImages[0] === '') {
+        newImages[0] = url
+      } else {
+        if (newImages.length < 15) {
+          newImages.push(url)
+        } else {
+          alert('Límite de 15 imágenes alcanzado')
+        }
+      }
+      setForm({ ...form, images: newImages })
+      alert('Imagen subida correctamente')
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Error al subir la imagen')
+    } finally {
+      setUploading(false)
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1296,14 +1349,33 @@ function PropertyModal({
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="admin-label !mb-0">Imágenes (URLs)</label>
-              <button
-                type="button"
-                onClick={addImage}
-                disabled={form.images.length >= 15}
-                className="text-xs font-bold text-primary-500 hover:text-primary-600 flex items-center gap-1 disabled:text-gray-400"
-              >
-                <Plus className="w-3 h-3" /> Añadir Foto ({form.images.length}/15)
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept="image/*"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || form.images.length >= 15}
+                  className="text-xs font-bold text-gray-600 hover:text-gray-900 flex items-center gap-1 disabled:text-gray-400 border border-gray-200 rounded px-2 py-1 bg-gray-50"
+                >
+                  {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                  {uploading ? 'Subiendo...' : 'Subir Foto'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={addImage}
+                  disabled={form.images.length >= 15}
+                  className="text-xs font-bold text-primary-500 hover:text-primary-600 flex items-center gap-1 disabled:text-gray-400"
+                >
+                  <Plus className="w-3 h-3" /> Añadir URL ({form.images.length}/15)
+                </button>
+              </div>
             </div>
             <p className="text-sm text-gray-500 mb-4">
               Pega URLs de imágenes. La primera será la principal. Máximo 15.
