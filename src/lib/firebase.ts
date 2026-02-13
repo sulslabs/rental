@@ -2,12 +2,12 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+    apiKey: "AIzaSyBy1Alm4T10vtKM_IIAVcoPs1knWzbPFSc",
+    authDomain: "rond-point-rental-487018.firebaseapp.com",
+    projectId: "rond-point-rental-487018",
+    storageBucket: "rond-point-rental-487018.appspot.com",
+    messagingSenderId: "549090464338",
+    appId: "1:549090464338:web:49f6c316f0b9ca64cb458b"
 };
 
 // Singleton pattern to avoid re-initialization
