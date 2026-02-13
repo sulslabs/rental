@@ -36,3 +36,28 @@ export interface SiteSettings {
   googleTagManagerId?: string;   // GTM: GTM-XXXXXXX
   customHeadCode?: string;       // Código personalizado para <head>
 }
+
+export interface NotificationPreferences {
+  whatsapp: {
+    enabled: boolean;
+    schedule: 'always' | 'business_hours';
+  };
+  email: {
+    enabled: boolean;
+    schedule: 'always';
+  };
+  timezone: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  phone?: string;
+  avatar?: string;
+  role?: 'admin' | 'owner' | 'user';
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  notificationPreferences?: NotificationPreferences;
+}

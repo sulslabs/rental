@@ -20,11 +20,11 @@ import {
     UserCircle,
     MessageSquare
 } from 'lucide-react'
+import { User } from '@/types'
 import {
     getUsers,
     adminCreateUser,
-    updateUserStatus,
-    User
+    updateUserStatus
 } from '@/lib/data'
 
 export default function UsersPage() {

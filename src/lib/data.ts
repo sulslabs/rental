@@ -1,4 +1,4 @@
-import type { Property, SiteSettings } from '@/types'
+import type { Property, SiteSettings, User } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rond-point-rentals-ai-kx5aus62lq-uc.a.run.app'
 
@@ -181,14 +181,7 @@ export async function saveProperties(properties: Property[]): Promise<boolean> {
   return true
 }
 // AUTH
-export interface User {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  role: 'admin' | 'owner'
-  active?: boolean
-}
+// AUTH
 
 export async function login(email: string, password: string): Promise<{ user: User, token: string } | null> {
   const data = await apiFetch<{ user: User, token: string }>('auth/login', {
