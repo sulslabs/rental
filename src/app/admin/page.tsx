@@ -1100,7 +1100,10 @@ function PropertyModal({
 
     try {
       setUploading(true)
+      console.log('Starting upload for file:', file.name, 'Size:', file.size)
+
       const url = await uploadToStorage(file)
+      console.log('Upload successful, URL:', url)
 
       // Add to images list
       // If the first image slot is empty, use it. Otherwise append.
@@ -1116,9 +1119,11 @@ function PropertyModal({
       }
       setForm({ ...form, images: newImages })
       alert('Imagen subida correctamente')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error)
-      alert('Error al subir la imagen')
+      console.error('Error code:', error?.code)
+      console.error('Error message:', error?.message)
+      alert(`Error al subir la imagen: ${error?.message || error}`)
     } finally {
       setUploading(false)
       // Reset input
