@@ -34,9 +34,9 @@ import {
   deleteProperty as removeProperty,
   logout as dataLogout,
   importAirbnb,
-  User,
   updateMe
 } from '@/lib/data'
+import type { User } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
@@ -59,6 +59,12 @@ function AdminContent() {
   const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
 
+  const defaultNotificationPreferences = {
+    whatsapp: { enabled: true, schedule: 'always' as const },
+    email: { enabled: true, schedule: 'always' as const },
+    timezone: 'America/Montevideo'
+  }
+
   const [activeTab, setActiveTab] = useState<Tab>('properties')
   const [properties, setProperties] = useState<Property[]>([])
   const [settings, setSettings] = useState<SiteSettings | null>(null)
@@ -72,7 +78,12 @@ function AdminContent() {
   const [profileData, setProfileData] = useState<Partial<User>>({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    notificationPreferences: {
+      whatsapp: { enabled: true, schedule: 'always' },
+      email: { enabled: true, schedule: 'always' },
+      timezone: 'America/Montevideo'
+    }
   })
   const [passwords, setPasswords] = useState({
     old: '',
@@ -126,7 +137,12 @@ function AdminContent() {
       setProfileData({
         name: user.name || '',
         email: user.email || '',
-        phone: user.phone || ''
+        phone: user.phone || '',
+        notificationPreferences: user.notificationPreferences || {
+          whatsapp: { enabled: true, schedule: 'always' },
+          email: { enabled: true, schedule: 'always' },
+          timezone: 'America/Montevideo'
+        }
       })
     }
   }, [user])
@@ -456,6 +472,130 @@ function AdminContent() {
                       onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                     />
                   </div>
+
+                  {/* Notifications Section */}
+                  <div className="pt-6 border-t mt-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-primary-500" />
+                      Notificaciones
+                    </h3>
+
+                    <div className="space-y-4 bg-gray-50 p-4 rounded-xl">
+                      {/* WhatsApp Config */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">WhatsApp</p>
+                          <p className="text-xs text-gray-500">Recibe alertas de nuevos interesados</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setProfileData(prev => ({
+                            ...prev,
+                            notificationPreferences: {
+                              ...defaultNotificationPreferences,
+                              ...prev.notificationPreferences,
+                              whatsapp: {
+                                ...(prev.notificationPreferences?.whatsapp || defaultNotificationPreferences.whatsapp),
+                                enabled: !prev.notificationPreferences?.whatsapp?.enabled
+                              }
+                            }
+                          }))}
+                          className={`p-2 rounded-lg transition-colors ${profileData.notificationPreferences?.whatsapp?.enabled
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-gray-200 text-gray-400'
+                            }`}
+                        >
+                          {profileData.notificationPreferences?.whatsapp?.enabled
+                            ? <ToggleRight className="w-6 h-6" />
+                            : <ToggleLeft className="w-6 h-6" />}
+                        </button>
+                      </div>
+
+                      {profileData.notificationPreferences?.whatsapp?.enabled && (
+                        <div className="ml-4 pl-4 border-l-2 border-gray-200 space-y-3">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={profileData.notificationPreferences.whatsapp.schedule === 'business_hours'}
+                              onChange={(e) => setProfileData({
+                                ...profileData,
+                                notificationPreferences: {
+                                  ...defaultNotificationPreferences,
+                                  ...profileData.notificationPreferences,
+                                  whatsapp: {
+                                    ...(profileData.notificationPreferences?.whatsapp || defaultNotificationPreferences.whatsapp),
+                                    schedule: e.target.checked ? 'business_hours' : 'always'
+                                  }
+                                }
+                              })}
+                              className="rounded text-primary-500 focus:ring-primary-500"
+                            />
+                            <span className="text-sm text-gray-700">Solo en Horario Comercial (09:00 - 18:00)</span>
+                          </label>
+
+                          {profileData.notificationPreferences.whatsapp.schedule === 'business_hours' && (
+                            <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                              Fuera de horario, los mensajes se guardarán y enviarán al día siguiente a las 09:00.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Email Config */}
+                      <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+                        <div>
+                          <p className="font-semibold text-gray-900">Email</p>
+                          <p className="text-xs text-gray-500">Recibe alertas por correo electrónico</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setProfileData({
+                            ...profileData,
+                            notificationPreferences: {
+                              ...defaultNotificationPreferences,
+                              ...profileData.notificationPreferences,
+                              email: {
+                                ...(profileData.notificationPreferences?.email || defaultNotificationPreferences.email),
+                                enabled: !profileData.notificationPreferences?.email?.enabled
+                              }
+                            }
+                          })}
+                          className={`p-2 rounded-lg transition-colors ${profileData.notificationPreferences?.email?.enabled
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-gray-200 text-gray-400'
+                            }`}
+                        >
+                          {profileData.notificationPreferences?.email?.enabled
+                            ? <ToggleRight className="w-6 h-6" />
+                            : <ToggleLeft className="w-6 h-6" />}
+                        </button>
+                      </div>
+
+                      <div className="pt-2">
+                        <label className="text-xs font-semibold text-gray-500 uppercase">Zona Horaria</label>
+                        <select
+                          value={profileData.notificationPreferences?.timezone || 'America/Montevideo'}
+                          onChange={(e) => setProfileData({
+                            ...profileData,
+                            notificationPreferences: {
+                              ...defaultNotificationPreferences,
+                              ...profileData.notificationPreferences,
+                              timezone: e.target.value
+                            }
+                          })}
+                          className="block w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 bg-white p-2"
+                        >
+                          <option value="America/Montevideo">Montevideo / Buenos Aires (GMT-3)</option>
+                          <option value="America/Sao_Paulo">São Paulo (GMT-3)</option>
+                          <option value="America/Santiago">Santiago (GMT-4/3)</option>
+                          <option value="America/Mexico_City">Ciudad de México (GMT-6)</option>
+                          <option value="Europe/Madrid">Madrid (GMT+1/2)</option>
+                          <option value="America/New_York">New York (EST)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="pt-6 border-t mt-6">
                     <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                       Cambiar Contraseña
@@ -514,289 +654,294 @@ function AdminContent() {
                 </form>
               </div>
             </div>
-          )}
+          )
+          }
 
           {/* Properties Tab */}
-          {activeTab === 'properties' && (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {properties.map((property) => (
-                <div
-                  key={property.id}
-                  className={`bg-white rounded-xl shadow-sm overflow-hidden ${!property.active ? 'opacity-60' : ''}`}
-                >
-                  <div className="relative aspect-[4/3]">
-                    {property.images[0] ? (
-                      <img
-                        src={property.images[0]}
-                        alt={property.title}
-                        className={`w-full h-full object-cover ${!property.active ? 'grayscale' : ''}`}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                        <Image className="w-12 h-12 text-gray-400" />
+          {
+            activeTab === 'properties' && (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {properties.map((property) => (
+                  <div
+                    key={property.id}
+                    className={`bg-white rounded-xl shadow-sm overflow-hidden ${!property.active ? 'opacity-60' : ''}`}
+                  >
+                    <div className="relative aspect-[4/3]">
+                      {property.images[0] ? (
+                        <img
+                          src={property.images[0]}
+                          alt={property.title}
+                          className={`w-full h-full object-cover ${!property.active ? 'grayscale' : ''}`}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <Image className="w-12 h-12 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3 flex gap-2">
+                        {property.featured && (
+                          <div className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                            <Bookmark className="w-3 h-3" /> Destacada
+                          </div>
+                        )}
+                        {!property.active && (
+                          <div className="bg-gray-600 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                            <EyeOff className="w-3 h-3" /> Inactiva
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      {property.featured && (
-                        <div className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                          <Bookmark className="w-3 h-3" /> Destacada
-                        </div>
-                      )}
-                      {!property.active && (
-                        <div className="bg-gray-600 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                          <EyeOff className="w-3 h-3" /> Inactiva
-                        </div>
-                      )}
+                    </div>
+
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className="font-bold text-gray-900">{property.title || 'Sin título'}</h3>
+                        {property.id && (
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono" title="ID Interno">
+                            {property.id}
+                          </span>
+                        )}
+                        {property.airbnbId && (
+                          <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono border border-red-100" title="Airbnb ID">
+                            {property.airbnbId}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 mb-3">{property.location || 'Sin ubicación'}</p>
+                      <p className="text-lg font-bold text-primary-500 mb-4">
+                        {property.price} <span className="text-sm font-normal text-gray-500">{property.priceNote}</span>
+                      </p>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingProperty(property)
+                            setShowPropertyModal(true)
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" /> Editar
+                        </button>
+                        <button
+                          onClick={() => toggleActive(property)}
+                          className={`p-2 rounded-lg transition-colors ${property.active
+                            ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                            }`}
+                          title={property.active ? 'Desactivar' : 'Activar'}
+                        >
+                          {property.active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
+                        </button>
+                        <button
+                          onClick={() => toggleFeatured(property)}
+                          className={`p-2 rounded-lg transition-colors ${property.featured
+                            ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
+                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                            }`}
+                          title={property.featured ? 'Quitar destacado' : 'Destacar'}
+                        >
+                          {property.featured ? <Bookmark className="w-5 h-5 fill-current" /> : <Bookmark className="w-5 h-5" />}
+                        </button>
+                        <button
+                          onClick={() => deleteProperty(property.id)}
+                          className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-1">
-                      <h3 className="font-bold text-gray-900">{property.title || 'Sin título'}</h3>
-                      {property.id && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono" title="ID Interno">
-                          {property.id}
-                        </span>
-                      )}
-                      {property.airbnbId && (
-                        <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono border border-red-100" title="Airbnb ID">
-                          {property.airbnbId}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500 mb-3">{property.location || 'Sin ubicación'}</p>
-                    <p className="text-lg font-bold text-primary-500 mb-4">
-                      {property.price} <span className="text-sm font-normal text-gray-500">{property.priceNote}</span>
-                    </p>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingProperty(property)
-                          setShowPropertyModal(true)
-                        }}
-                        className="flex-1 flex items-center justify-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm transition-colors"
-                      >
-                        <Edit3 className="w-4 h-4" /> Editar
-                      </button>
-                      <button
-                        onClick={() => toggleActive(property)}
-                        className={`p-2 rounded-lg transition-colors ${property.active
-                          ? 'bg-green-100 text-green-600 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                          }`}
-                        title={property.active ? 'Desactivar' : 'Activar'}
-                      >
-                        {property.active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-                      </button>
-                      <button
-                        onClick={() => toggleFeatured(property)}
-                        className={`p-2 rounded-lg transition-colors ${property.featured
-                          ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                          }`}
-                        title={property.featured ? 'Quitar destacado' : 'Destacar'}
-                      >
-                        {property.featured ? <Bookmark className="w-5 h-5 fill-current" /> : <Bookmark className="w-5 h-5" />}
-                      </button>
-                      <button
-                        onClick={() => deleteProperty(property.id)}
-                        className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )
+          }
 
           {/* Settings Tab */}
-          {activeTab === 'settings' && settings && (
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+          {
+            activeTab === 'settings' && settings && (
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
 
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Información General</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="admin-label">Nombre del Sitio</label>
-                      <input
-                        type="text"
-                        value={settings.siteName}
-                        onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                        className="admin-input"
-                      />
-                    </div>
-                    <div>
-                      <label className="admin-label">Título Principal (Hero)</label>
-                      <input
-                        type="text"
-                        value={settings.heroTitle}
-                        onChange={(e) => setSettings({ ...settings, heroTitle: e.target.value })}
-                        className="admin-input"
-                      />
-                    </div>
-                    <div>
-                      <label className="admin-label">Subtítulo (Hero)</label>
-                      <textarea
-                        value={settings.heroSubtitle}
-                        onChange={(e) => setSettings({ ...settings, heroSubtitle: e.target.value })}
-                        className="admin-input"
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Contacto</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="admin-label">Número de WhatsApp (sin +)</label>
-                      <input
-                        type="text"
-                        value={settings.whatsappNumber}
-                        onChange={(e) => setSettings({ ...settings, whatsappNumber: e.target.value })}
-                        className="admin-input"
-                        placeholder="+17372081313"
-                      />
-                    </div>
-                    <div>
-                      <label className="admin-label">Mensaje Predeterminado de WhatsApp</label>
-                      <textarea
-                        value={settings.whatsappMessage}
-                        onChange={(e) => setSettings({ ...settings, whatsappMessage: e.target.value })}
-                        className="admin-input"
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Redes Sociales</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="admin-label">Instagram</label>
-                      <input
-                        type="text"
-                        value={settings.instagram || ''}
-                        onChange={(e) => setSettings({ ...settings, instagram: e.target.value })}
-                        className="admin-input"
-                        placeholder="usuario"
-                      />
-                    </div>
-                    <div>
-                      <label className="admin-label">Facebook</label>
-                      <input
-                        type="text"
-                        value={settings.facebook || ''}
-                        onChange={(e) => setSettings({ ...settings, facebook: e.target.value })}
-                        className="admin-input"
-                        placeholder="usuario"
-                      />
-                    </div>
-                    <div>
-                      <label className="admin-label">TikTok</label>
-                      <input
-                        type="text"
-                        value={settings.tiktok || ''}
-                        onChange={(e) => setSettings({ ...settings, tiktok: e.target.value })}
-                        className="admin-input"
-                        placeholder="usuario"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Footer</h3>
                   <div>
-                    <label className="admin-label">Texto del Footer</label>
-                    <input
-                      type="text"
-                      value={settings.footerText}
-                      onChange={(e) => setSettings({ ...settings, footerText: e.target.value })}
-                      className="admin-input"
-                    />
-                  </div>
-                </div>
-
-                {user?.role === 'admin' && (
-                  <>
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4">Analytics y Tracking</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="admin-label">Google Analytics 4 (ID)</label>
-                          <input
-                            type="text"
-                            value={settings.googleAnalyticsId || ''}
-                            onChange={(e) => setSettings({ ...settings, googleAnalyticsId: e.target.value })}
-                            className="admin-input"
-                            placeholder="G-XXXXXXXXXX"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">ID de medición de GA4 (empieza con G-)</p>
-                        </div>
-                        <div>
-                          <label className="admin-label">Meta Pixel (Facebook)</label>
-                          <input
-                            type="text"
-                            value={settings.metaPixelId || ''}
-                            onChange={(e) => setSettings({ ...settings, metaPixelId: e.target.value })}
-                            className="admin-input"
-                            placeholder="123456789012345"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">ID del Pixel de Meta/Facebook (solo números)</p>
-                        </div>
-                        <div>
-                          <label className="admin-label">Google Tag Manager (ID)</label>
-                          <input
-                            type="text"
-                            value={settings.googleTagManagerId || ''}
-                            onChange={(e) => setSettings({ ...settings, googleTagManagerId: e.target.value })}
-                            className="admin-input"
-                            placeholder="GTM-XXXXXXX"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">ID del contenedor GTM (empieza con GTM-)</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4">Código Personalizado</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Información General</h3>
+                    <div className="space-y-4">
                       <div>
-                        <label className="admin-label">Código para {'<head>'}</label>
-                        <textarea
-                          value={settings.customHeadCode || ''}
-                          onChange={(e) => setSettings({ ...settings, customHeadCode: e.target.value })}
-                          className="admin-input font-mono text-sm"
-                          rows={5}
-                          placeholder="<!-- Pega aquí código adicional para el <head> -->"
+                        <label className="admin-label">Nombre del Sitio</label>
+                        <input
+                          type="text"
+                          value={settings.siteName}
+                          onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                          className="admin-input"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Scripts, meta tags u otro código HTML para el {'<head>'}</p>
+                      </div>
+                      <div>
+                        <label className="admin-label">Título Principal (Hero)</label>
+                        <input
+                          type="text"
+                          value={settings.heroTitle}
+                          onChange={(e) => setSettings({ ...settings, heroTitle: e.target.value })}
+                          className="admin-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="admin-label">Subtítulo (Hero)</label>
+                        <textarea
+                          value={settings.heroSubtitle}
+                          onChange={(e) => setSettings({ ...settings, heroSubtitle: e.target.value })}
+                          className="admin-input"
+                          rows={3}
+                        />
                       </div>
                     </div>
-                  </>
-                )}
+                  </div>
 
-                <div className="border-t pt-6">
-                  <button
-                    onClick={saveSettings}
-                    disabled={saving}
-                    className="w-full flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-                  >
-                    <Save className="w-5 h-5" />
-                    {saving ? 'Guardando...' : 'Guardar Configuración'}
-                  </button>
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Contacto</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="admin-label">Número de WhatsApp (sin +)</label>
+                        <input
+                          type="text"
+                          value={settings.whatsappNumber}
+                          onChange={(e) => setSettings({ ...settings, whatsappNumber: e.target.value })}
+                          className="admin-input"
+                          placeholder="+17372081313"
+                        />
+                      </div>
+                      <div>
+                        <label className="admin-label">Mensaje Predeterminado de WhatsApp</label>
+                        <textarea
+                          value={settings.whatsappMessage}
+                          onChange={(e) => setSettings({ ...settings, whatsappMessage: e.target.value })}
+                          className="admin-input"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Redes Sociales</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="admin-label">Instagram</label>
+                        <input
+                          type="text"
+                          value={settings.instagram || ''}
+                          onChange={(e) => setSettings({ ...settings, instagram: e.target.value })}
+                          className="admin-input"
+                          placeholder="usuario"
+                        />
+                      </div>
+                      <div>
+                        <label className="admin-label">Facebook</label>
+                        <input
+                          type="text"
+                          value={settings.facebook || ''}
+                          onChange={(e) => setSettings({ ...settings, facebook: e.target.value })}
+                          className="admin-input"
+                          placeholder="usuario"
+                        />
+                      </div>
+                      <div>
+                        <label className="admin-label">TikTok</label>
+                        <input
+                          type="text"
+                          value={settings.tiktok || ''}
+                          onChange={(e) => setSettings({ ...settings, tiktok: e.target.value })}
+                          className="admin-input"
+                          placeholder="usuario"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Footer</h3>
+                    <div>
+                      <label className="admin-label">Texto del Footer</label>
+                      <input
+                        type="text"
+                        value={settings.footerText}
+                        onChange={(e) => setSettings({ ...settings, footerText: e.target.value })}
+                        className="admin-input"
+                      />
+                    </div>
+                  </div>
+
+                  {user?.role === 'admin' && (
+                    <>
+                      <div className="border-t pt-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Analytics y Tracking</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="admin-label">Google Analytics 4 (ID)</label>
+                            <input
+                              type="text"
+                              value={settings.googleAnalyticsId || ''}
+                              onChange={(e) => setSettings({ ...settings, googleAnalyticsId: e.target.value })}
+                              className="admin-input"
+                              placeholder="G-XXXXXXXXXX"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">ID de medición de GA4 (empieza con G-)</p>
+                          </div>
+                          <div>
+                            <label className="admin-label">Meta Pixel (Facebook)</label>
+                            <input
+                              type="text"
+                              value={settings.metaPixelId || ''}
+                              onChange={(e) => setSettings({ ...settings, metaPixelId: e.target.value })}
+                              className="admin-input"
+                              placeholder="123456789012345"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">ID del Pixel de Meta/Facebook (solo números)</p>
+                          </div>
+                          <div>
+                            <label className="admin-label">Google Tag Manager (ID)</label>
+                            <input
+                              type="text"
+                              value={settings.googleTagManagerId || ''}
+                              onChange={(e) => setSettings({ ...settings, googleTagManagerId: e.target.value })}
+                              className="admin-input"
+                              placeholder="GTM-XXXXXXX"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">ID del contenedor GTM (empieza con GTM-)</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Código Personalizado</h3>
+                        <div>
+                          <label className="admin-label">Código para {'<head>'}</label>
+                          <textarea
+                            value={settings.customHeadCode || ''}
+                            onChange={(e) => setSettings({ ...settings, customHeadCode: e.target.value })}
+                            className="admin-input font-mono text-sm"
+                            rows={5}
+                            placeholder="<!-- Pega aquí código adicional para el <head> -->"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Scripts, meta tags u otro código HTML para el {'<head>'}</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="border-t pt-6">
+                    <button
+                      onClick={saveSettings}
+                      disabled={saving}
+                      className="w-full flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                    >
+                      <Save className="w-5 h-5" />
+                      {saving ? 'Guardando...' : 'Guardar Configuración'}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )
+          }
+        </div >
       </main >
 
       {/* Property Edit Modal */}
