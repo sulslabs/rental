@@ -75,6 +75,7 @@ export interface Lead {
   guests?: number
   closed?: boolean
   status: 'unread' | 'read' | 'archived'
+  closed?: boolean
   createdAt: string
   updatedAt: string
 }
