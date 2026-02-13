@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { getLeads, updateLead, deleteLead } from '@/lib/data'
 import {
     Home,
     MessageSquare,
@@ -40,10 +41,11 @@ export default function ConversationsPage() {
 
     const fetchLeads = async () => {
         try {
-            const res = await fetch('/api/leads')
-            if (res.ok) {
-                const data = await res.json()
-                setLeads(data.leads || [])
+            const data = await getLeads()
+            if (data && data.leads) {
+                setLeads(data.leads)
+            } else if (Array.isArray(data)) {
+                setLeads(data)
             }
         } catch (err) {
             console.error('Error fetching leads:', err)
@@ -62,12 +64,7 @@ export default function ConversationsPage() {
         const lead = leads.find(l => l.id === id)
         const newStatus = lead?.status === 'unread' ? 'read' : 'unread'
 
-        await fetch(`/api/leads/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-        })
-
+        await updateLead(id, { status: newStatus })
         fetchLeads()
     }
 
@@ -76,7 +73,7 @@ export default function ConversationsPage() {
     async function handleDelete(id: string) {
         if (!confirm('¿Eliminar este mensaje?')) return
 
-        await fetch(`/api/leads/${id}`, { method: 'DELETE' })
+        await deleteLead(id)
         fetchLeads()
     }
 
@@ -84,12 +81,7 @@ export default function ConversationsPage() {
         const lead = leads.find(l => l.id === id)
         const newClosed = !lead?.closed
 
-        await fetch(`/api/leads/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ closed: newClosed })
-        })
-
+        await updateLead(id, { closed: newClosed })
         fetchLeads()
     }
 
