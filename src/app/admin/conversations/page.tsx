@@ -15,7 +15,9 @@ import {
     UserCircle,
     Eye,
     EyeOff,
-    Trash2
+    Trash2,
+    CheckCircle2,
+    Circle
 } from 'lucide-react'
 import type { Lead } from '@/types'
 
@@ -63,6 +65,20 @@ export default function ConversationsPage() {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
+        })
+
+        fetchLeads()
+    }
+
+
+    async function handleToggleClosed(id: string) {
+        const lead = leads.find(l => l.id === id)
+        const newClosed = !lead?.closed
+
+        await fetch(`/api/leads/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ closed: newClosed })
         })
 
         fetchLeads()
@@ -257,7 +273,14 @@ export default function ConversationsPage() {
                                             </div>
 
                                             <div className="space-y-1 text-sm text-gray-600">
-                                                <p>📧 {lead.email}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p>📧 {lead.email}</p>
+                                                    {lead.closed && (
+                                                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium border border-green-200">
+                                                            <CheckCircle2 className="w-3 h-3" /> Concretado
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p>📱 {lead.phone}</p>
 
                                                 {lead.propertyName && (
@@ -299,6 +322,23 @@ export default function ConversationsPage() {
                                             >
                                                 <Trash2 className="w-5 h-5" />
                                             </button>
+
+                                            <div className="border-l pl-2 ml-2 flex items-center">
+                                                <button
+                                                    onClick={() => handleToggleClosed(lead.id)}
+                                                    className={`p-2 rounded-lg transition-colors flex items-center gap-2 ${lead.closed
+                                                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                                        }`}
+                                                    title={lead.closed ? 'Marcar como no concretado' : 'Marcar como concretado'}
+                                                >
+                                                    {lead.closed ? (
+                                                        <CheckCircle2 className="w-5 h-5" />
+                                                    ) : (
+                                                        <Circle className="w-5 h-5" />
+                                                    )}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -306,7 +346,7 @@ export default function ConversationsPage() {
                         </div>
                     )}
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     )
 }
