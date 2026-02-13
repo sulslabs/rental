@@ -14,17 +14,17 @@ import {
   Eye,
   EyeOff,
   Edit3,
-  X,
-  Star,
   ExternalLink,
   Bookmark,
+  X,
+  Star,
   Menu,
   ChevronLeft,
   ToggleLeft,
   ToggleRight,
   Hash,
   UserCircle,
-  BarChart3,
+  BarChart3
 } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
 import {
