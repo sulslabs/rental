@@ -1,32 +1,42 @@
 export interface Property {
-  id: string
-  title: string
-  description: string
-  price: number
-  location: string
-  bedrooms: number
-  bathrooms: number
-  area: number
-  images: string[]
-  amenities: string[]
-  active: boolean
-  featured: boolean
-  airbnbId?: string
-  ownerId?: string
+  id: string;
+  referenceCode?: string; // Número de ficha manual (ej: "PDE-001")
+  airbnbId?: string; // ID específico de Airbnb
+  title: string;
+  description: string;
+  location: string;
+  price: string;
+  priceNote?: string;
+  images: string[];
+  airbnbUrl: string;
+  featured: boolean;
+  active: boolean;
+  amenities: string[];
+  guests: number;
+  bedrooms: number;
+  bathrooms: number;
+  rating?: string;
+  area?: number; // Keep for backward compatibility
+  ownerId?: string; // Keep for backward compatibility
 }
 
 export interface SiteSettings {
-  siteName: string
-  tagline: string
-  contactEmail: string
-  contactPhone: string
-  whatsappNumber: string
-  address: string
-  socialMedia: {
-    facebook?: string
-    instagram?: string
-    twitter?: string
-  }
+  siteName: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  whatsappNumber: string;
+  whatsappMessage: string;
+  email: string;
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  footerText: string;
+  adminPassword: string;
+  // Analytics & Tracking
+  googleAnalyticsId?: string;    // GA4: G-XXXXXXXXXX
+  metaPixelId?: string;          // Facebook Pixel: 123456789
+  googleTagManagerId?: string;   // GTM: GTM-XXXXXXX
+  customHeadCode?: string;       // Código personalizado para <head>
 }
 
 export interface User {
