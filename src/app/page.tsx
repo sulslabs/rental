@@ -222,11 +222,8 @@ export default function HomePage() {
                       <button
                         key={idx}
                         onClick={() => {
-                          if (idx === 2 && selectedProperty.images.length > 3) {
-                            setIsGalleryOpen(true)
-                          } else {
-                            setActiveImage(idx)
-                          }
+                          setActiveImage(idx)
+                          setIsGalleryOpen(true)
                           setIsAutoRotating(false)
                         }}
                         className={`relative aspect-[4/3] rounded-lg overflow-hidden transition-all ${activeImage === idx
