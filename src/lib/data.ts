@@ -268,3 +268,8 @@ export async function deleteLead(id: string): Promise<boolean> {
   })
   return !!data?.success
 }
+
+export async function getReports(): Promise<any> {
+  return await apiFetch<any>('reports')
+}
+

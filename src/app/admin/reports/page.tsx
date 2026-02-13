@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { getReports } from '@/lib/data'
 import {
     Home,
     MessageSquare,
@@ -63,9 +64,8 @@ export default function ReportsPage() {
 
     const fetchReportData = async () => {
         try {
-            const res = await fetch('/api/reports')
-            if (res.ok) {
-                const data = await res.json()
+            const data = await getReports()
+            if (data && !data.error) {
                 setStats(data)
             }
         } catch (err) {

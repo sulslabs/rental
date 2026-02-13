@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Script from 'next/script'
 import { MessageCircle, MapPin, Users, Bed, Bath, Star, Home, Instagram, Facebook, PlusCircle, Bookmark, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Property, SiteSettings } from '@/types'
+import { getProperties, getSettings } from '@/lib/data'
 import FAQ from '@/components/FAQ'
 
 // TikTok icon component
@@ -63,15 +64,11 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [propsRes, settingsRes] = await Promise.all([
-          fetch('/api/properties'),
-          fetch('/api/settings')
+        const [activeProperties, settingsData] = await Promise.all([
+          getProperties(),
+          getSettings()
         ])
-        const propsData = await propsRes.json()
-        const settingsData = await settingsRes.json()
 
-        // Filter only active properties
-        const activeProperties = propsData.filter((p: Property) => p.active !== false)
         setProperties(activeProperties)
         setSettings(settingsData)
 
